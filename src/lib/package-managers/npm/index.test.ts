@@ -110,7 +110,7 @@ describe("npm.install()", () => {
 			dependencyType: "dev",
 		});
 		expect(execaMock.mock.calls[0][1]).toEqual(
-			expect.arrayContaining(["--dev"]),
+			expect.arrayContaining(["--save-dev"]),
 		);
 	});
 
@@ -215,7 +215,7 @@ describe("npm.uninstall()", () => {
 			dependencyType: "dev",
 		});
 		expect(execaMock.mock.calls[0][1]).toEqual(
-			expect.arrayContaining(["--dev"]),
+			expect.arrayContaining(["--save-dev"]),
 		);
 	});
 
@@ -310,7 +310,7 @@ describe("npm.update()", () => {
 			dependencyType: "dev",
 		});
 		expect(execaMock.mock.calls[0][1]).toEqual(
-			expect.arrayContaining(["--dev"]),
+			expect.arrayContaining(["--save-dev"]),
 		);
 	});
 

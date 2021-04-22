@@ -18,7 +18,7 @@ export class Npm extends PackageManager {
 	): Promise<CommandResult> {
 		const args = ["install"];
 		if (options.dependencyType === "dev") {
-			args.push("--dev");
+			args.push("--save-dev");
 		}
 		if (options.exact) args.push("--save-exact");
 		if (options.global) args.push("--global");
@@ -40,7 +40,7 @@ export class Npm extends PackageManager {
 	): Promise<CommandResult> {
 		const args = ["uninstall"];
 		if (options.dependencyType === "dev") {
-			args.push("--dev");
+			args.push("--save-dev");
 		}
 		if (options.global) args.push("--global");
 		if (this.loglevel) {
@@ -61,7 +61,7 @@ export class Npm extends PackageManager {
 	): Promise<CommandResult> {
 		const args = ["update"];
 		if (options.dependencyType === "dev") {
-			args.push("--dev");
+			args.push("--save-dev");
 		}
 		if (options.global) args.push("-g");
 		if (this.loglevel) {

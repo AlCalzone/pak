@@ -13,4 +13,6 @@
 		80,
 		120
 	],
+	"jest.enableCodeLens": true,
+	"jest.pathToJest": "yarn test",
 }

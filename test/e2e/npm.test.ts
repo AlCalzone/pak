@@ -42,8 +42,8 @@ describe("End to end tests - npm", () => {
 		await npm.uninstall(["is-odd"], { dependencyType: "dev" });
 		packageJson = await readJson(packageJsonPath);
 
-		expect(packageJson.dependencies).not.toHaveProperty("is-even");
-		expect(packageJson.dependencies).not.toHaveProperty("is-odd");
+		expect(packageJson.dependencies ?? {}).not.toHaveProperty("is-even");
+		expect(packageJson.devDependencies ?? {}).not.toHaveProperty("is-odd");
 	});
 
 	afterAll(async () => {

@@ -6,6 +6,7 @@ Roadmap:
 
 -   [x] `npm`
 -   [ ] `yarn`
+-   [ ] streaming stdout/stderr
 
 ## Usage
 

@@ -10,8 +10,8 @@
   "scripts": {
     "test:reset": "jest --clear-cache",
     "test:ts": "jest",
-    "test:ci": "yarn run test:ts -- --runInBand",
-    "test:watch": "yarn run test:ts -- --watch",
+    "test:ci": "yarn run test:ts --runInBand",
+    "test:watch": "yarn run test:ts --watch",
     "test": "yarn run test:watch",
     "lint:ts": "eslint --ext .ts \"src/**/*.ts\"",
     "lint": "yarn run lint:ts",
@@ -19,8 +19,8 @@
     "build:ts": "node .build.js -typescript",
     "check:ts": "tsc -p tsconfig.build.json --noEmit",
     "build": "node .build.js -typescript",
-    "watch:ts": "npm run build:ts -- --watch",
-    "watch": "npm run build -- --watch",
+    "watch:ts": "yarn run build:ts --watch",
+    "watch": "yarn run build --watch",
     "release": "release-script"
   },
   "devDependencies": {

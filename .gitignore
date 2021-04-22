@@ -1,0 +1,16 @@
+# No dot-directories except github/vscode
+.*/
+!.vscode/
+!.github/
+node_modules
+nbproject
+
+# Sourcemaps
+maps/
+
+# npm package files
+*.tgz
+
+Thumbs.db
+
+build/

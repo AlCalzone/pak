@@ -1,0 +1,51 @@
+{
+  "name": "pak",
+  "version": "0.0.1",
+  "description": "Programmatic wrapper around popular Node.js package managers",
+  "main": "build/index.js",
+  "repository": "https://github.com/AlCalzone/pak.git",
+  "author": "Dominic Griesel <d.griesel@gmx.net>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "test:reset": "jest --clear-cache",
+    "test:ts": "jest",
+    "test:ci": "yarn run test:ts -- --runInBand",
+    "test:watch": "yarn run test:ts -- --watch",
+    "test": "yarn run test:watch",
+    "lint:ts": "eslint --ext .ts \"packages/*/src/**/*.ts\"",
+    "lint": "yarn run lint:ts",
+    "prebuild": "rimraf ./build",
+    "build:ts": "node .build.js -typescript",
+    "check:ts": "tsc -p tsconfig.build.json --noEmit",
+    "build": "node .build.js -typescript",
+    "watch:ts": "npm run build:ts -- --watch",
+    "watch": "npm run build -- --watch",
+    "release": "release-script"
+  },
+  "devDependencies": {
+    "@alcalzone/release-script": "^1.8.3",
+    "@babel/core": "^7.13.16",
+    "@babel/preset-env": "^7.13.15",
+    "@babel/preset-typescript": "^7.13.0",
+    "@types/jest": "^26.0.22",
+    "@types/node": "^14.14.37",
+    "@typescript-eslint/eslint-plugin": "^4.20.0",
+    "@typescript-eslint/parser": "^4.20.0",
+    "eslint": "^7.23.0",
+    "eslint-config-prettier": "^8.1.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "estrella": "^1.4.0",
+    "jest": "^26.4.2",
+    "jest-extended": "^0.11.5",
+    "prettier": "^2.1.2",
+    "prettier-plugin-organize-imports": "^1.1.1",
+    "rimraf": "^3.0.2",
+    "source-map-support": "^0.5.19",
+    "tiny-glob": "^0.2.8",
+    "typescript": "^4.2.3"
+  },
+  "dependencies": {
+    "execa": "^5.0.0"
+  }
+}

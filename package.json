@@ -4,8 +4,10 @@
   "description": "Programmatic wrapper around popular Node.js package managers",
   "main": "build/index.js",
   "types": "build/index.d.ts",
-  "files": ["build/**"],
-  "publishConfig":{
+  "files": [
+    "build/**"
+  ],
+  "publishConfig": {
     "access": "public"
   },
   "repository": "https://github.com/AlCalzone/pak.git",
@@ -27,7 +29,7 @@
     "release": "release-script"
   },
   "devDependencies": {
-    "@alcalzone/release-script": "^1.8.3",
+    "@alcalzone/release-script": "^1.9.0",
     "@babel/core": "^7.13.16",
     "@babel/preset-env": "^7.13.15",
     "@babel/preset-typescript": "^7.13.0",

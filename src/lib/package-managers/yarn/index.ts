@@ -10,15 +10,19 @@ import {
 	UpdateOptions,
 } from "../package-manager";
 
-const exactVersionRegex = /.+@\d+/;
+function setLoglevel(args: string[], loglevel: PackageManager["loglevel"]) {
+	if (loglevel === "silent" || loglevel === "verbose") {
+		args.push(`--${loglevel}`);
+	}
+}
 
-export class Npm extends PackageManager {
-	/** Executes a "raw" npm command */
+export class Yarn extends PackageManager {
+	/** Executes a "raw" yarn command */
 	private async command(
 		args: string[],
 		options: execa.Options<string> = {},
 	): Promise<CommandResult> {
-		const promise = execa("npm", args, {
+		const promise = execa("yarn", args, {
 			...options,
 			cwd: this.cwd,
 			reject: false,
@@ -40,23 +44,23 @@ export class Npm extends PackageManager {
 		return execaReturnValueToCommandResult(result);
 	}
 
-	/** Installs the given packages using npm */
+	/** Installs the given packages using yarn */
 	public install(
 		packages: string[],
 		options: InstallOptions = {},
 	): Promise<CommandResult> {
-		const args = ["install"];
-		if (options.dependencyType === "dev") {
-			args.push("--save-dev");
-		}
-		if (options.exact || packages.some((p) => exactVersionRegex.test(p))) {
-			args.push("--save-exact");
-		}
-		if (options.global) args.push("--global");
-		if (this.loglevel) {
-			args.push("--loglevel", this.loglevel);
-		}
+		const args: string[] = [];
+		if (options.global) args.push("global");
+		args.push("add");
 		args.push(...packages);
+
+		if (options.dependencyType === "dev") {
+			args.push("--dev");
+		}
+		if (options.exact) {
+			args.push("--exact");
+		}
+		setLoglevel(args, this.loglevel);
 
 		return this.command(args);
 	}
@@ -65,15 +69,15 @@ export class Npm extends PackageManager {
 		packages: string[],
 		options: UninstallOptions = {},
 	): Promise<CommandResult> {
-		const args = ["uninstall"];
-		if (options.dependencyType === "dev") {
-			args.push("--save-dev");
-		}
-		if (options.global) args.push("--global");
-		if (this.loglevel) {
-			args.push("--loglevel", this.loglevel);
-		}
+		const args: string[] = [];
+		if (options.global) args.push("global");
+		args.push("remove");
 		args.push(...packages);
+
+		if (options.dependencyType === "dev") {
+			args.push("--dev");
+		}
+		setLoglevel(args, this.loglevel);
 
 		return this.command(args);
 	}
@@ -82,33 +86,28 @@ export class Npm extends PackageManager {
 		packages: string[] = [],
 		options: UpdateOptions = {},
 	): Promise<CommandResult> {
-		const args = ["update"];
-		if (options.dependencyType === "dev") {
-			args.push("--save-dev");
-		}
-		if (options.global) args.push("-g");
-		if (this.loglevel) {
-			args.push("--loglevel", this.loglevel);
-		}
-		args.push(...packages);
-
-		return this.command(args);
+		// We want to update the package.json entries and yarn only does that
+		// when using the `add` command
+		return this.install(packages, options);
 	}
 
-	public rebuild(packages: string[] = []): Promise<CommandResult> {
-		const args = ["rebuild"];
-		if (this.loglevel) {
-			args.push("--loglevel", this.loglevel);
-		}
-		args.push(...packages);
-
-		return this.command(args);
+	public async rebuild(): Promise<CommandResult> {
+		const stderr = `yarn does not support the "rebuild" command!`;
+		return {
+			success: false,
+			exitCode: 1,
+			stdout: "",
+			stderr,
+			stdall: stderr,
+		};
 	}
 
 	public async detect(): Promise<boolean> {
 		try {
 			const rootDir = await this.findRoot();
-			return pathExists(path.join(rootDir, "package-lock.json"));
+			// Check if yarn is version 1
+			if (!(await this.version()).startsWith("1.")) return false;
+			return pathExists(path.join(rootDir, "yarn.lock"));
 		} catch {
 			return false;
 		}
@@ -118,7 +117,7 @@ export class Npm extends PackageManager {
 		const result = await this.command(["-v"]);
 		if (!result.success) {
 			throw new Error(
-				`Could not detect npm version: ${result.stderr}! Exit code: ${result.exitCode}.`,
+				`Could not detect yarn version: ${result.stderr}! Exit code: ${result.exitCode}.`,
 			);
 		}
 		return result.stdout;

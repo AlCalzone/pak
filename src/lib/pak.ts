@@ -1,7 +1,9 @@
 import { Npm } from "./package-managers/npm";
 import type { PackageManager } from "./package-managers/package-manager";
+import { Yarn } from "./package-managers/yarn";
 
 export const packageManagers = Object.freeze({
+	yarn: Yarn,
 	npm: Npm,
 });
 

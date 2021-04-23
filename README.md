@@ -5,8 +5,7 @@ Programmatic wrapper around popular Node.js package managers
 Roadmap:
 
 -   [x] `npm`
--   [ ] `yarn`
--   [ ] streaming stdout/stderr
+-   [x] `yarn 1`
 
 ## Usage
 
@@ -130,3 +129,11 @@ pak.stdall = new PassThrough().on("data", (data) => {
 
 // execute commands
 ```
+
+### Get the version of the package manager
+
+```ts
+const version = await pak.version();
+```
+
+Returns a string with the package manager's version.

@@ -25,6 +25,9 @@ export abstract class PackageManager {
 	/** Rebuilds the specified native packages or all of them if none are specified */
 	public abstract rebuild(packages?: string[]): Promise<CommandResult>;
 
+	/** Returns the active version of the package manager */
+	public abstract version(): Promise<string>;
+
 	/** The directory to run the package manager commands in */
 	public cwd: string = process.cwd();
 

@@ -48,7 +48,7 @@ const result = await pak.install(packages, options);
 ```
 
 -   `packages` is an array of package specifiers, like `["pak", "fs-extra"]` or `["semver@1.2.3"]`
--   `options`: See [#common-options](common options) for details.
+-   `options`: See [common options](#common-options) for details.
 
 ### Uninstall one or more packages
 
@@ -57,7 +57,7 @@ const result = await pak.uninstall(packages, options);
 ```
 
 -   `packages` is an array of package specifiers, like `["pak", "fs-extra"]` or `["semver@1.2.3"]`
--   `options`: See [#common-options](common options) for details.
+-   `options`: See [common options](#common-options) for details.
 
 ### Update one or more packages
 
@@ -66,7 +66,7 @@ const result = await pak.update(packages, options);
 ```
 
 -   `packages` is an array of package names, like `["pak", "fs-extra"]`. If no packages are given, all packages in the current workspace are updated.
--   `options`: See [#common-options](common options) for details.
+-   `options`: See [common options](#common-options) for details.
 
 ### Recompile native packages
 
@@ -75,7 +75,7 @@ const result = await pak.rebuild(packages, options);
 ```
 
 -   `packages` is an array of package names, like `["pak", "fs-extra"]`. If no packages are given, all packages in the current workspace are rebuilt.
--   `options`: See [#common-options](common options) for details.
+-   `options`: See [common options](#common-options) for details.
 
 ### Result object
 

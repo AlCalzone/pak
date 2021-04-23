@@ -36,7 +36,7 @@ All package managers share the following properties:
 | Property | Type | Description |
 ---------------------------------------------------------------- | -------- | --------- |
 | `cwd` | `string` | The directory to run the package manager commands in. Defaults to `process.cwd()` |
-| `loglevel` | `"info" \| "verbose" \| "warn" \| "error" \| "silent"` | Which loglevel to pass to the package manager |
+| `loglevel` | `"info" \| "verbose" \| "warn" \| "error" \| "silent"` | Which loglevel to pass to the package manager. **Note:** Not every package manager supports every loglevel. |
 | `stdout` | `WritableStream` | A stream to pipe the command's `stdout` into. |
 | `stderr` | `WritableStream` | A stream to pipe the command's `stderr` into. |
 | `stdall` | `WritableStream` | A stream to pipe the command's `stdout` and `stderr` into in the order the output comes. |

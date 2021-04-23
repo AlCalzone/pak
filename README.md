@@ -38,6 +38,9 @@ All package managers share the following properties:
 ---------------------------------------------------------------- | -------- | --------- |
 | `cwd` | `string` | The directory to run the package manager commands in. Defaults to `process.cwd()` |
 | `loglevel` | `"info" \| "verbose" \| "warn" \| "error" \| "silent"` | Which loglevel to pass to the package manager |
+| `stdout` | `WritableStream` | A stream to pipe the command's `stdout` into. |
+| `stderr` | `WritableStream` | A stream to pipe the command's `stderr` into. |
+| `stdall` | `WritableStream` | A stream to pipe the command's `stdout` and `stderr` into in the order the output comes. |
 
 ### Install one or more packages
 
@@ -109,3 +112,21 @@ const dir = await pak.findRoot();
 ```
 
 Returns a string with a path to the nearest parent directory (including `cwd`) that contains a `package.json`. Throws if none was found.
+
+### Stream the command output
+
+You can stream the command output (`stdout`, `stderr` or both) during the command execution, as opposed to getting the entire output at the end. To do so,
+set the `stdout`, `stderr` and/or `stdall` properties of the package manager instance to a writable stream. Example:
+
+```ts
+import { PassThrough } from "stream";
+import { packageManagers } from "../../src/index";
+
+const pak = new packageManagers.npm(); // or the automatically detected one
+pak.stdall = new PassThrough().on("data", (data) => {
+	// For example, log to console - or do something else with the data
+	console.log(data.toString("utf8"));
+});
+
+// execute commands
+```

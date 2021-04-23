@@ -2,14 +2,14 @@
 const { build, cliopts } = require("estrella");
 const glob = require("tiny-glob");
 
-const [opts, args] = cliopts.parse(
-	["typescript", "Build TypeScript soruces"],
-);
+const [opts, args] = cliopts.parse(["typescript", "Build TypeScript soruces"]);
 
 if (opts.typescript) {
 	(async () => {
 		let entryPoints = await glob("./src/**/*.ts");
-		entryPoints = entryPoints.filter((ep) => !ep.endsWith(".d.ts"));
+		entryPoints = entryPoints
+			.filter((ep) => !ep.endsWith(".d.ts"))
+			.filter((ep) => !ep.endsWith(".test.ts"));
 		await build({
 			entryPoints,
 			outdir: "build",

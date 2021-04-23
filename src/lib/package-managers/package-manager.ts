@@ -1,6 +1,8 @@
 import type { ExecaReturnValue } from "execa";
 import { pathExists } from "fs-extra";
 import path from "path";
+import type { Writable } from "stream";
+
 export abstract class PackageManager {
 	/** Installs the specified packages */
 	public abstract install(
@@ -49,6 +51,16 @@ export abstract class PackageManager {
 
 	/** Tests if this package manager should be active in the current directory */
 	public abstract detect(): Promise<boolean>;
+
+	/** The (optional) stream to pipe the command's stdout into */
+	public stdout?: Writable;
+	/** The (optional) stream to pipe the command's stderr into */
+	public stderr?: Writable;
+	/**
+	 * The (optional) stream to pipe the command's entire output (stdout + stderr) into.
+	 * If this is set, stdout and stderr will be ignored
+	 */
+	public stdall?: Writable;
 }
 
 export interface InstallBaseOptions {
@@ -75,6 +87,8 @@ export interface CommandResult {
 	stdout: string;
 	/** The captured stderr */
 	stderr: string;
+	/** The captured stdout and stderr, interleaved like it would appear on the console */
+	stdall: string;
 }
 
 export function execaReturnValueToCommandResult(
@@ -89,5 +103,6 @@ export function execaReturnValueToCommandResult(
 		exitCode: result.exitCode,
 		stdout: result.stdout,
 		stderr: result.stderr,
+		stdall: result.all!,
 	};
 }

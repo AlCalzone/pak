@@ -1,6 +1,4 @@
 import execa from "execa";
-import { pathExists } from "fs-extra";
-import path from "path";
 import {
 	CommandResult,
 	execaReturnValueToCommandResult,
@@ -102,12 +100,11 @@ export class Yarn extends PackageManager {
 		};
 	}
 
-	public async detect(): Promise<boolean> {
+	public async detect(requireLockfile: boolean = true): Promise<boolean> {
 		try {
-			const rootDir = await this.findRoot();
+			await this.findRoot(requireLockfile ? "yarn.lock" : undefined);
 			// Check if yarn is version 1
-			if (!(await this.version()).startsWith("1.")) return false;
-			return pathExists(path.join(rootDir, "yarn.lock"));
+			return (await this.version()).startsWith("1.");
 		} catch {
 			return false;
 		}

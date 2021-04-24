@@ -30,6 +30,9 @@ describe("End to end tests - yarn", () => {
 		await yarn.install(["is-even@0.1.0"], { exact: true });
 		await yarn.install(["is-odd@^3.0.0"], { dependencyType: "dev" });
 
+		// Now that something is installed, there should be a yarn.lock
+		await expect(yarn.findRoot("yarn.lock")).resolves.toBe(testDir);
+
 		packageJson = await readJson(packageJsonPath);
 		expect(packageJson.dependencies["is-even"]).toBe("0.1.0");
 		expect(packageJson.devDependencies["is-odd"]).toBe("^3.0.0");

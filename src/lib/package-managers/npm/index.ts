@@ -1,6 +1,4 @@
 import execa from "execa";
-import { pathExists } from "fs-extra";
-import path from "path";
 import {
 	CommandResult,
 	execaReturnValueToCommandResult,
@@ -105,10 +103,12 @@ export class Npm extends PackageManager {
 		return this.command(args);
 	}
 
-	public async detect(): Promise<boolean> {
+	public async detect(requireLockfile: boolean = true): Promise<boolean> {
 		try {
-			const rootDir = await this.findRoot();
-			return pathExists(path.join(rootDir, "package-lock.json"));
+			await this.findRoot(
+				requireLockfile ? "package-lock.json" : undefined,
+			);
+			return true;
 		} catch {
 			return false;
 		}

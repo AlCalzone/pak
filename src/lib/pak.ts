@@ -7,13 +7,28 @@ export const packageManagers = Object.freeze({
 	npm: Npm,
 });
 
-export async function detectPackageManager(
-	cwd: string = process.cwd(),
-): Promise<PackageManager> {
+export interface DetectPackageManagerOptions {
+	/** The directory to detect the package manager for */
+	cwd?: string;
+	/** If this is `false` and no package manager with a matching lockfile was found, another pass is done without requiring one */
+	requireLockfile?: boolean;
+}
+
+export async function detectPackageManager({
+	cwd = process.cwd(),
+	requireLockfile = true,
+}: DetectPackageManagerOptions = {}): Promise<PackageManager> {
 	for (const factory of Object.values(packageManagers)) {
 		const pm = new factory();
 		pm.cwd = cwd;
-		if (await pm.detect()) return pm;
+		if (await pm.detect(true)) return pm;
+	}
+	if (!requireLockfile) {
+		for (const factory of Object.values(packageManagers)) {
+			const pm = new factory();
+			pm.cwd = cwd;
+			if (await pm.detect(false)) return pm;
+		}
 	}
 	throw new Error("This directory tree does not contain a package.json");
 }

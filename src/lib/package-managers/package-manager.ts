@@ -34,26 +34,36 @@ export abstract class PackageManager {
 	/** Which loglevel to pass to the package manager */
 	public loglevel?: "info" | "verbose" | "warn" | "error" | "silent";
 
-	/** Finds the closest parent directory that contains a package.json */
-	public async findRoot(): Promise<string> {
+	/** Finds the closest parent directory that contains a package.json and the corresponding lockfile (if one was specified) */
+	public async findRoot(lockfile?: string): Promise<string> {
 		let curDir = this.cwd;
 		let parentDir: string;
 		while (true) {
 			const packageJsonPath = path.join(curDir, "package.json");
-			if (await pathExists(packageJsonPath)) return curDir;
+			if (await pathExists(packageJsonPath)) {
+				if (!lockfile) return curDir;
+				const lockfilePath = path.join(curDir, lockfile);
+				if (await pathExists(lockfilePath)) return curDir;
+			}
+
 			parentDir = path.dirname(curDir);
 			if (parentDir === curDir) {
 				// we've reached the root without finiding a package.json
 				throw new Error(
-					"This directory tree does not contain a package.json",
+					`This directory tree does not contain a directory with package.json${
+						lockfile ? " and a lockfile" : ""
+					}!`,
 				);
 			}
 			curDir = parentDir;
 		}
 	}
 
-	/** Tests if this package manager should be active in the current directory */
-	public abstract detect(): Promise<boolean>;
+	/**
+	 * Tests if this package manager should be active in the current directory.
+	 * @param requireLockfile Whether a matching lockfile must be present for the check to succeed
+	 */
+	public abstract detect(requireLockfile?: boolean): Promise<boolean>;
 
 	/** The (optional) stream to pipe the command's stdout into */
 	public stdout?: Writable;

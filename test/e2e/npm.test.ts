@@ -30,6 +30,9 @@ describe("End to end tests - npm", () => {
 		await npm.install(["is-even@0.1.0"], { exact: true });
 		await npm.install(["is-odd@3.0.0"], { dependencyType: "dev" });
 
+		// Now that something is installed, there should be a package-lock.json
+		await expect(npm.findRoot("package-lock.json")).resolves.toBe(testDir);
+
 		packageJson = await readJson(packageJsonPath);
 		expect(packageJson.dependencies["is-even"]).toBe("0.1.0");
 		expect(packageJson.devDependencies["is-odd"]).toBe("3.0.0");

@@ -107,10 +107,11 @@ These options are used to influence the commands' behavior. All options are opti
 ### Find the nearest parent directory with a `package.json`
 
 ```ts
-const dir = await pak.findRoot();
+await pak.findRoot();
+await pak.findRoot("lockfile.json");
 ```
 
-Returns a string with a path to the nearest parent directory (including `cwd`) that contains a `package.json`. Throws if none was found.
+Returns a string with a path to the nearest parent directory (including `cwd`) that contains a `package.json` (and a lockfile if one was specified). Throws if none was found.
 
 ### Stream the command output
 

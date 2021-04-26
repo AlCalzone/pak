@@ -1,4 +1,6 @@
 import execa from "execa";
+import * as fs from "fs-extra";
+import * as path from "path";
 import {
 	CommandResult,
 	execaReturnValueToCommandResult,
@@ -118,5 +120,47 @@ export class Yarn extends PackageManager {
 			);
 		}
 		return result.stdout;
+	}
+
+	public async overrideDependencies(
+		dependencies: Record<string, string>,
+	): Promise<CommandResult> {
+		let root: string;
+		try {
+			root = await this.findRoot();
+			const packageJsonPath = path.join(root, "package.json");
+			const packageJson = await fs.readJson(packageJsonPath, {
+				encoding: "utf8",
+			});
+			// Add the dependencies to "resolutions" and let yarn figure it out
+			let resolutions = packageJson.resolutions ?? {};
+			resolutions = {
+				...resolutions,
+				...dependencies,
+			};
+			packageJson.resolutions = resolutions;
+			await fs.writeJson(packageJsonPath, packageJson, {
+				spaces: 2,
+				encoding: "utf8",
+			});
+		} catch (e) {
+			const stderr = "Error updating root package.json: " + e.message;
+			return {
+				success: false,
+				exitCode: 1,
+				stdout: "",
+				stderr,
+				stdall: stderr,
+			};
+		}
+
+		// Running "yarn install" in the root dir will install the correct dependencies
+		const prevCwd = this.cwd;
+		this.cwd = root;
+		try {
+			return await this.command(["install"]);
+		} finally {
+			this.cwd = prevCwd;
+		}
 	}
 }

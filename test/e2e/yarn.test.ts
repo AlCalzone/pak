@@ -1,3 +1,4 @@
+import execa from "execa";
 import { ensureDir, readJson, writeJson } from "fs-extra";
 import os from "os";
 import path from "path";
@@ -8,13 +9,14 @@ import { packageManagers } from "../../src/index";
 describe("End to end tests - yarn", () => {
 	let testDir: string;
 
-	beforeAll(async () => {
+	beforeEach(async () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-yarn");
+		await promisify(rimraf)(testDir);
 		await ensureDir(testDir);
 	});
 
-	it("installs correctly using yarn", async () => {
+	it("installs und uninstalls correctly", async () => {
 		jest.setTimeout(60000);
 		let packageJson: Record<string, any> = {
 			name: "test",
@@ -49,7 +51,57 @@ describe("End to end tests - yarn", () => {
 		expect(packageJson.devDependencies ?? {}).not.toHaveProperty("is-odd");
 	});
 
-	afterAll(async () => {
+	it("overriding dependencies works", async () => {
+		jest.setTimeout(60000);
+		const packageJson: Record<string, any> = {
+			name: "test",
+			version: "0.0.1",
+		};
+		const packageJsonPath = path.join(testDir, "package.json");
+		await writeJson(packageJsonPath, packageJson);
+
+		const yarn = new packageManagers.yarn();
+		yarn.cwd = testDir;
+
+		// is-even@1.0.0 includes is-odd@^0.1.2, which also has newer versions (1.0.0+)
+		await yarn.install(["is-even@1.0.0"]);
+		let version = await execa.command(
+			'node -p require("is-odd/package.json").version',
+			{
+				cwd: testDir,
+				reject: false,
+				encoding: "utf8",
+			},
+		);
+		expect(version.stdout).toMatch(/^0\./);
+
+		const result = await yarn.overrideDependencies({
+			"is-odd": "1.0.0",
+		});
+		expect(result.success).toBe(true);
+
+		version = await execa.command(
+			'node -p require("is-odd/package.json").version',
+			{
+				cwd: testDir,
+				reject: false,
+				encoding: "utf8",
+			},
+		);
+		expect(version.stdout).toBe("1.0.0");
+
+		version = await execa.command(
+			'node -p require("is-odd/package.json").version',
+			{
+				cwd: path.join(testDir, "node_modules/is-even"),
+				reject: false,
+				encoding: "utf8",
+			},
+		);
+		expect(version.stdout).toBe("1.0.0");
+	});
+
+	afterEach(async () => {
 		await promisify(rimraf)(testDir);
 	});
 });

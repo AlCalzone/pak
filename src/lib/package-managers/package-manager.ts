@@ -4,6 +4,12 @@ import path from "path";
 import type { Writable } from "stream";
 
 export abstract class PackageManager {
+	/**
+	 * Tests if this package manager should be active in the current directory.
+	 * @param requireLockfile Whether a matching lockfile must be present for the check to succeed
+	 */
+	public abstract detect(requireLockfile?: boolean): Promise<boolean>;
+
 	/** Installs the specified packages */
 	public abstract install(
 		packages: string[],
@@ -27,12 +33,6 @@ export abstract class PackageManager {
 
 	/** Returns the active version of the package manager */
 	public abstract version(): Promise<string>;
-
-	/** The directory to run the package manager commands in */
-	public cwd: string = process.cwd();
-
-	/** Which loglevel to pass to the package manager */
-	public loglevel?: "info" | "verbose" | "warn" | "error" | "silent";
 
 	/** Finds the closest parent directory that contains a package.json and the corresponding lockfile (if one was specified) */
 	public async findRoot(lockfile?: string): Promise<string> {
@@ -59,11 +59,16 @@ export abstract class PackageManager {
 		}
 	}
 
-	/**
-	 * Tests if this package manager should be active in the current directory.
-	 * @param requireLockfile Whether a matching lockfile must be present for the check to succeed
-	 */
-	public abstract detect(requireLockfile?: boolean): Promise<boolean>;
+	/** Forces the given dependency versions to be installed, rather than what the official packages require */
+	public abstract overrideDependencies(
+		dependencies: Record<string, string>,
+	): Promise<CommandResult>;
+
+	/** The directory to run the package manager commands in */
+	public cwd: string = process.cwd();
+
+	/** Which loglevel to pass to the package manager */
+	public loglevel?: "info" | "verbose" | "warn" | "error" | "silent";
 
 	/** The (optional) stream to pipe the command's stdout into */
 	public stdout?: Writable;

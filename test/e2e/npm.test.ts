@@ -12,6 +12,7 @@ describe("End to end tests - npm", () => {
 	beforeEach(async () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-npm");
+		await promisify(rimraf)(testDir);
 		await ensureDir(testDir);
 	});
 
@@ -74,6 +75,8 @@ describe("End to end tests - npm", () => {
 			"is-odd": "1.0.0",
 		});
 		expect(result.success).toBe(true);
+
+		debugger;
 
 		version = await execa.command(
 			'node -p require("is-odd/package.json").version',

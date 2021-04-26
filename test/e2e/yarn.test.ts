@@ -12,6 +12,7 @@ describe("End to end tests - yarn", () => {
 	beforeEach(async () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-yarn");
+		await promisify(rimraf)(testDir);
 		await ensureDir(testDir);
 	});
 

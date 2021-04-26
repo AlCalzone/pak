@@ -59,7 +59,7 @@ async function resolveDependency(
 	}
 }
 
-function overrideV1V2(
+function overrideV1(
 	original: Record<string, any>,
 	override: ResolvedDependency,
 ): Record<string, any> {
@@ -75,6 +75,103 @@ function overrideV1V2(
 	}
 	ret.requires = override.dependencies;
 	return ret;
+}
+
+function overrideV2(
+	original: Record<string, any>,
+	override: ResolvedDependency,
+): Record<string, any> {
+	const ret: Record<string, any> = {
+		...original,
+	};
+	ret.version = override.version;
+	if (ret.tarball) {
+		ret.tarball = override.tarball;
+	} else {
+		ret.resolved = override.tarball;
+		if (override.integrity) ret.integrity = override.integrity;
+		else delete ret.integrity;
+	}
+	ret.dependencies = override.dependencies;
+	return ret;
+}
+
+function walkLockfileV1(
+	root: Record<string, any>,
+	dir: string,
+	overrides: Record<string, ResolvedDependency>,
+	affectedPackageJsons: Set<string>,
+) {
+	if (!("dependencies" in root)) return;
+	for (const dep of Object.keys(root.dependencies)) {
+		if (dep in overrides) {
+			// Replace the overrides
+			root.dependencies[dep] = overrideV1(
+				root.dependencies[dep],
+				overrides[dep],
+			);
+		} else {
+			const depRoot = root.dependencies[dep];
+			if ("requires" in depRoot) {
+				let wasChanged = false;
+				for (const [ovrr, { version }] of Object.entries(overrides)) {
+					if (ovrr in depRoot.requires) {
+						depRoot.requires[ovrr] = version;
+						wasChanged = true;
+					}
+				}
+				if (wasChanged) {
+					// The package is affected, update it and remember where its package.json is
+					affectedPackageJsons.add(
+						path.join(dir, "node_modules", dep, "package.json"),
+					);
+				}
+			}
+
+			// and recursively continue with the other packages that might use them
+			walkLockfileV1(
+				root.dependencies[dep],
+				path.join(dir, "node_modules", dep),
+				overrides,
+				affectedPackageJsons,
+			);
+		}
+	}
+}
+
+function walkLockfileV2(
+	root: Record<string, any>,
+	dir: string,
+	overrides: Record<string, ResolvedDependency>,
+	affectedPackageJsons: Set<string>,
+) {
+	if (!("packages" in root)) return;
+	// Lockfile v2 stores a package structure
+	for (const pkg of Object.keys(root.packages)) {
+		const pkgRoot = root.packages[pkg];
+		const name =
+			pkgRoot.name ?? pkg.substr(pkg.lastIndexOf("node_modules/") + 13);
+
+		if (name in overrides) {
+			// Replace the overrides
+			root.packages[pkg] = overrideV2(
+				root.packages[pkg],
+				overrides[name],
+			);
+		} else if ("dependencies" in pkgRoot) {
+			let wasChanged = false;
+			for (const [ovrr, { version }] of Object.entries(overrides)) {
+				if (ovrr in pkgRoot.dependencies) {
+					pkgRoot.dependencies[ovrr] = version;
+					wasChanged = true;
+				}
+			}
+			if (wasChanged) {
+				// The package is affected, update it and remember where its package.json is
+				affectedPackageJsons.add(path.join(dir, pkg, "package.json"));
+			}
+		}
+	}
 }
 
 export class Npm extends PackageManager {
@@ -241,50 +338,25 @@ export class Npm extends PackageManager {
 		}
 
 		// Walk through the lockfile, edit it and find the package.jsons we need to update
-		const affectedPackageJsons: string[] = [rootPackageJsonPath];
-		const walkLockfileV1V2 = (root: Record<string, any>, dir: string) => {
-			if (!("dependencies" in root)) return;
-			for (const dep of Object.keys(root.dependencies)) {
-				if (dep in overrides) {
-					// Replace the overrides
-					root.dependencies[dep] = overrideV1V2(
-						root.dependencies[dep],
-						overrides[dep],
-					);
-				} else {
-					const depRoot = root.dependencies[dep];
-					if ("requires" in depRoot) {
-						let wasChanged = false;
-						for (const [ovrr, { version }] of Object.entries(
-							overrides,
-						)) {
-							if (ovrr in depRoot.requires) {
-								depRoot.requires[ovrr] = version;
-								wasChanged = true;
-							}
-						}
-						if (wasChanged) {
-							// The package is affected, update it and remember where its package.json is
-							affectedPackageJsons.push(
-								path.join(
-									dir,
-									"node_modules",
-									dep,
-									"package.json",
-								),
-							);
-						}
-					}
-
-					// and recursively continue with the other packages that might use them
-					walkLockfileV1V2(
-						root.dependencies[dep],
-						path.join(dir, "node_modules", dep),
-					);
-				}
-			}
-		};
-		walkLockfileV1V2(rootPackageLock, root);
+		const affectedPackageJsons = new Set<string>();
+		affectedPackageJsons.add(rootPackageJsonPath);
+		if (rootPackageLock.lockfileVersion === 2) {
+			walkLockfileV2(
+				rootPackageLock,
+				root,
+				overrides,
+				affectedPackageJsons,
+			);
+		}
+		if (rootPackageLock.lockfileVersion <= 2) {
+			// V2 contains backwards compatibility data for V1 we also need to edit
+			walkLockfileV1(
+				rootPackageLock,
+				root,
+				overrides,
+				affectedPackageJsons,
+			);
+		}
 
 		try {
 			for (const packPath of affectedPackageJsons) {
@@ -322,6 +394,7 @@ export class Npm extends PackageManager {
 		const prevCwd = this.cwd;
 		this.cwd = root;
 		try {
+			debugger;
 			const ret = await this.command(["install"]);
 			// Force npm to restore the original structure
 			await this.command(["dedupe"]);

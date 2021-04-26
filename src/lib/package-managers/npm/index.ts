@@ -1,4 +1,7 @@
+import axios from "axios";
 import execa from "execa";
+import * as fs from "fs-extra";
+import * as path from "path";
 import {
 	CommandResult,
 	execaReturnValueToCommandResult,
@@ -9,6 +12,70 @@ import {
 } from "../package-manager";
 
 const exactVersionRegex = /.+@\d+/;
+
+interface ResolvedDependency {
+	version: string;
+	integrity: string;
+	tarball: string;
+	dependencies: Record<string, string>;
+}
+
+function fail(message: string): CommandResult {
+	return {
+		success: false,
+		exitCode: 1,
+		stdout: "",
+		stderr: message,
+		stdall: message,
+	};
+}
+
+async function resolveDependency(
+	dependency: string,
+	version: string,
+): Promise<ResolvedDependency> {
+	let reg: Record<string, any>;
+	try {
+		reg = (await axios.get(`https://registry.npmjs.org/${dependency}`))
+			.data;
+	} catch (e) {
+		throw new Error(
+			`Failed to download package info from npm registry: ${e.message}`,
+		);
+	}
+
+	if (version in reg.versions) {
+		const versionInfo = reg.versions[version];
+		return {
+			version: versionInfo.version,
+			dependencies: versionInfo.dependencies,
+			integrity: versionInfo.dist.integrity,
+			tarball: versionInfo.dist.tarball,
+		};
+	} else {
+		throw new Error(
+			`${dependency}@${version} was not found in the npm registry!`,
+		);
+	}
+}
+
+function overrideV1V2(
+	original: Record<string, any>,
+	override: ResolvedDependency,
+): Record<string, any> {
+	const ret: Record<string, any> = {
+		...original,
+	};
+	ret.version = override.version;
+	if (ret.tarball) {
+		ret.tarball = override.tarball;
+	} else {
+		ret.resolved = override.tarball;
+		if (override.integrity) ret.integrity = override.integrity;
+	}
+	ret.requires = override.dependencies;
+	return ret;
+}
 
 export class Npm extends PackageManager {
 	/** Executes a "raw" npm command */
@@ -122,5 +189,145 @@ export class Npm extends PackageManager {
 			);
 		}
 		return result.stdout;
+	}
+
+	public async overrideDependencies(
+		dependencies: Record<string, string>,
+	): Promise<CommandResult> {
+		// In order to override dependency versions in npm, we need to do the following things:
+		// 1. Update the definition(s) of the updated package in package-lock.json. These are objects under ...->"dependencies"
+		// 2. Find all packages that use the package, edit their local package.json to point to the new version
+		// 3. run `npm install` in the root dir. This updates package-lock.json with the versions from the local package.json files
+
+		let root: string;
+		let rootPackageJsonPath: string;
+		let rootPackageLockPath: string;
+		// let rootPackageJson: Record<string, any>;
+		let rootPackageLock: Record<string, any>;
+
+		try {
+			root = await this.findRoot("package-lock.json");
+			rootPackageJsonPath = path.join(root, "package.json");
+			// rootPackageJson = await fs.readJson(rootPackageJsonPath, {
+			// 	encoding: "utf8",
+			// });
+			rootPackageLockPath = path.join(root, "package-lock.json");
+			rootPackageLock = await fs.readJson(rootPackageLockPath, {
+				encoding: "utf8",
+			});
+		} catch (e) {
+			return fail(
+				`Error loading root package.json and package-lock.json: ${e.message}`,
+			);
+		}
+
+		if (
+			rootPackageLock.lockfileVersion !== 1 &&
+			rootPackageLock.lockfileVersion !== 2
+		) {
+			return fail(
+				`Lockfile version ${rootPackageLock.lockfileVersion} is not supported!`,
+			);
+		}
+
+		// Look up the information for our overrides
+		const overrides: Record<string, ResolvedDependency> = {};
+		for (const [dep, version] of Object.entries(dependencies)) {
+			try {
+				overrides[dep] = await resolveDependency(dep, version);
+			} catch (e) {
+				return fail(e.message);
+			}
+		}
+
+		// Walk through the lockfile, edit it and find the package.jsons we need to update
+		const affectedPackageJsons: string[] = [rootPackageJsonPath];
+		const walkLockfileV1V2 = (root: Record<string, any>, dir: string) => {
+			if (!("dependencies" in root)) return;
+			for (const dep of Object.keys(root.dependencies)) {
+				if (dep in overrides) {
+					// Replace the overrides
+					root.dependencies[dep] = overrideV1V2(
+						root.dependencies[dep],
+						overrides[dep],
+					);
+				} else {
+					const depRoot = root.dependencies[dep];
+					if ("requires" in depRoot) {
+						let wasChanged = false;
+						for (const [ovrr, { version }] of Object.entries(
+							overrides,
+						)) {
+							if (ovrr in depRoot.requires) {
+								depRoot.requires[ovrr] = version;
+								wasChanged = true;
+							}
+						}
+						if (wasChanged) {
+							// The package is affected, update it and remember where its package.json is
+							affectedPackageJsons.push(
+								path.join(
+									dir,
+									"node_modules",
+									dep,
+									"package.json",
+								),
+							);
+						}
+					}
+
+					// and recursively continue with the other packages that might use them
+					walkLockfileV1V2(
+						root.dependencies[dep],
+						path.join(dir, "node_modules", dep),
+					);
+				}
+			}
+		};
+		walkLockfileV1V2(rootPackageLock, root);
+
+		try {
+			for (const packPath of affectedPackageJsons) {
+				// Update each possibly affected package.json
+				const pack = await fs.readJson(packPath, {
+					encoding: "utf8",
+				});
+				if (!pack.dependencies) continue;
+				let wasChanged = false;
+				for (const [dep, { version }] of Object.entries(overrides)) {
+					if (dep in pack.dependencies) {
+						pack.dependencies[dep] = version;
+						wasChanged = true;
+					}
+				}
+				// And save it
+				if (wasChanged) {
+					await fs.writeJson(packPath, pack, {
+						spaces: 2,
+						encoding: "utf8",
+					});
+				}
+			}
+
+			// Save package-lock.json last
+			await fs.writeJson(rootPackageLockPath, rootPackageLock, {
+				spaces: 2,
+				encoding: "utf8",
+			});
+		} catch (e) {
+			return fail(`Error updating package files: ${e.message}`);
+		}
+
+		// Running "npm install" in the root dir will now install the correct dependencies
+		const prevCwd = this.cwd;
+		this.cwd = root;
+		try {
+			const ret = await this.command(["install"]);
+			// Force npm to restore the original structure
+			await this.command(["dedupe"]);
+			return ret;
+		} finally {
+			this.cwd = prevCwd;
+		}
 	}
 }

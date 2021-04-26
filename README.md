@@ -77,6 +77,21 @@ const result = await pak.rebuild(packages, options);
 -   `packages` is an array of package names, like `["pak", "fs-extra"]`. If no packages are given, all packages in the current workspace are rebuilt.
 -   `options`: See [common options](#common-options) for details.
 
+### Pin transitive dependencies to a fixed version
+
+```ts
+const result = await pak.overrideDependencies(overrides);
+```
+
+-   `overrides` is an object of packages and exact versions, like `{"pak": "1.2.3"}`
+
+Sometimes it is necessary to update transitive dependencies, meaning dependencies of dependencies. This command changes all occurences of the given overridden dependencies in the current `node_modules` tree so that the packages have the specified versions. How it works depends on the package manager:
+
+-   `yarn` uses the built-in `"resolutions"` property for `package.json`
+-   `npm` patches the root `package-lock.json` and `package.json` for all dependents of the overridden packages
+
+**Note:** This command does not support version ranges and it does not check whether the overrides are compatible with the version specified in `package.json`.
+
 ### Result object
 
 The returned value is an object with the following properties:

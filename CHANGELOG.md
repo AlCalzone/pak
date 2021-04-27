@@ -3,6 +3,9 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## __WORK IN PROGRESS__
+Fix: `yarn.overrideDependencies` now correctly looks for a `yarn.lock` to determine the root directory
+
 ## 0.3.0 (2021-04-26)
 Add support for overriding transient dependencies
 

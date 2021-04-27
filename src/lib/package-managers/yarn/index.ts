@@ -127,7 +127,7 @@ export class Yarn extends PackageManager {
 	): Promise<CommandResult> {
 		let root: string;
 		try {
-			root = await this.findRoot();
+			root = await this.findRoot("yarn.lock");
 			const packageJsonPath = path.join(root, "package.json");
 			const packageJson = await fs.readJson(packageJsonPath, {
 				encoding: "utf8",

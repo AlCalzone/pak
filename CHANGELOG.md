@@ -3,7 +3,7 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
-## __WORK IN PROGRESS__
+## 0.5.0 (2021-05-03)
 Add support for additional args that are passed as-is to the package manager.
 
 ## 0.4.0 (2021-05-03)

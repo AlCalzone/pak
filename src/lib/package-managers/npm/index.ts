@@ -204,7 +204,7 @@ export class Npm extends PackageManager {
 
 	/** Installs the given packages using npm */
 	public install(
-		packages: string[],
+		packages: string[] = [],
 		options: InstallOptions = {},
 	): Promise<CommandResult> {
 		const args = ["install"];
@@ -219,6 +219,10 @@ export class Npm extends PackageManager {
 			args.push("--loglevel", this.loglevel);
 		}
 		args.push(...packages);
+
+		if (!packages.length && this.environment === "production") {
+			args.push("--production");
+		}
 
 		return this.command(args);
 	}
@@ -395,7 +399,7 @@ export class Npm extends PackageManager {
 		this.cwd = root;
 		try {
 			debugger;
-			const ret = await this.command(["install"]);
+			const ret = await this.install();
 			// Force npm to restore the original structure
 			await this.command(["dedupe"]);
 			return ret;

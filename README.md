@@ -40,6 +40,7 @@ All package managers share the following properties:
 | `stdout` | `WritableStream` | A stream to pipe the command's `stdout` into. |
 | `stderr` | `WritableStream` | A stream to pipe the command's `stderr` into. |
 | `stdall` | `WritableStream` | A stream to pipe the command's `stdout` and `stderr` into in the order the output comes. |
+| `environment`| `"production" | "development"` | In an production environment, `pak` avoids accidentally pulling in `devDependencies` during `install` commands. |
 
 ### Install one or more packages
 
@@ -49,6 +50,8 @@ const result = await pak.install(packages, options);
 
 -   `packages` is an array of package specifiers, like `["pak", "fs-extra"]` or `["semver@1.2.3"]`
 -   `options`: See [common options](#common-options) for details.
+
+If `packages` is empty or `undefined`, this will install the packages that are defined in `package.json` in the `cwd`.
 
 ### Uninstall one or more packages
 

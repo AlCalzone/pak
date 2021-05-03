@@ -12,7 +12,7 @@ export abstract class PackageManager {
 
 	/** Installs the specified packages */
 	public abstract install(
-		packages: string[],
+		packages?: string[],
 		options?: InstallOptions,
 	): Promise<CommandResult>;
 
@@ -79,6 +79,12 @@ export abstract class PackageManager {
 	 * If this is set, stdout and stderr will be ignored
 	 */
 	public stdall?: Writable;
+
+	/**
+	 * The environment the package manager is executed in (default: "production").
+	 * In an production environment, `pak` avoids accidentally pulling in `devDependencies`.
+	 */
+	public environment: "production" | "development" = "production";
 }
 
 export interface InstallBaseOptions {

@@ -101,6 +101,46 @@ describe("End to end tests - yarn", () => {
 		expect(version.stdout).toBe("1.0.0");
 	});
 
+	it("does not install devDependencies, unless the environment is set to development", async () => {
+		jest.setTimeout(60000);
+		const packageJson: Record<string, any> = {
+			name: "test",
+			version: "0.0.1",
+			devDependencies: {
+				"is-odd": "3.0.0",
+			},
+		};
+		const packageJsonPath = path.join(testDir, "package.json");
+		await writeJson(packageJsonPath, packageJson);
+
+		const yarn = new packageManagers.yarn();
+		yarn.cwd = testDir;
+
+		await yarn.install([]);
+		let version = await execa.command(
+			'node -p require("is-odd/package.json").version',
+			{
+				cwd: testDir,
+				reject: false,
+				encoding: "utf8",
+			},
+		);
+		// not found!
+		expect(version.stdout).toBe("");
+
+		yarn.environment = "development";
+		await yarn.install([]);
+		version = await execa.command(
+			'node -p require("is-odd/package.json").version',
+			{
+				cwd: testDir,
+				reject: false,
+				encoding: "utf8",
+			},
+		);
+		// now it is
+		expect(version.stdout).toBe("3.0.0");
+	});
 	afterEach(async () => {
 		await promisify(rimraf)(testDir);
 	});

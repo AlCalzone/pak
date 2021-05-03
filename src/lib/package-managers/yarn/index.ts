@@ -44,21 +44,30 @@ export class Yarn extends PackageManager {
 		return execaReturnValueToCommandResult(result);
 	}
 
-	/** Installs the given packages using yarn */
+	/**
+	 * Installs the given packages using `yarn add`. If no packages are given, `yarn install` is executed in the cwd.
+	 */
 	public install(
-		packages: string[],
+		packages: string[] = [],
 		options: InstallOptions = {},
 	): Promise<CommandResult> {
 		const args: string[] = [];
-		if (options.global) args.push("global");
-		args.push("add");
-		args.push(...packages);
+		if (packages.length > 0) {
+			if (options.global) args.push("global");
+			args.push("add");
+			args.push(...packages);
 
-		if (options.dependencyType === "dev") {
-			args.push("--dev");
-		}
-		if (options.exact) {
-			args.push("--exact");
+			if (options.dependencyType === "dev") {
+				args.push("--dev");
+			}
+			if (options.exact) {
+				args.push("--exact");
+			}
+		} else {
+			args.push("install");
+			if (this.environment === "production") {
+				args.push("--production");
+			}
 		}
 		setLoglevel(args, this.loglevel);
 
@@ -158,7 +167,7 @@ export class Yarn extends PackageManager {
 		const prevCwd = this.cwd;
 		this.cwd = root;
 		try {
-			return await this.command(["install"]);
+			return await this.install();
 		} finally {
 			this.cwd = prevCwd;
 		}

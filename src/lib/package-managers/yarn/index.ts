@@ -71,6 +71,10 @@ export class Yarn extends PackageManager {
 		}
 		setLoglevel(args, this.loglevel);
 
+		if (options.additionalArgs) {
+			args.push(...options.additionalArgs);
+		}
+
 		return this.command(args);
 	}
 
@@ -87,6 +91,10 @@ export class Yarn extends PackageManager {
 			args.push("--dev");
 		}
 		setLoglevel(args, this.loglevel);
+
+		if (options.additionalArgs) {
+			args.push(...options.additionalArgs);
+		}
 
 		return this.command(args);
 	}

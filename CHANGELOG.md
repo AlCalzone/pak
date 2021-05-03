@@ -3,6 +3,9 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## __WORK IN PROGRESS__
+Add support for additional args that are passed as-is to the package manager.
+
 ## 0.4.0 (2021-05-03)
 Install commands without packages (`yarn install` / `npm install`) no longer install `devDependencies` by default. To turn this back on, set the `environment` property of the package manager instance to `development`.
 

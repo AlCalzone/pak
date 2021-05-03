@@ -116,11 +116,12 @@ interface CommandResult {
 
 These options are used to influence the commands' behavior. All options are optional:
 
-| Option           | Type              | Description                                                      | Default  | Commands  |
-| ---------------- | ----------------- | ---------------------------------------------------------------- | -------- | --------- |
-| `dependencyType` | `"prod" \| "dev"` | Whether to install a production or dev dependency.               | `"prod"` | all       |
-| `global`         | `boolean`         | Whether to install the package globally.                         | `false`  | all       |
-| `exact`          | `boolean`         | Whether exact versions should be used instead of `"^ver.si.on"`. | `false`  | `install` |
+| Option           | Type              | Description                                                             | Default  | Commands               |
+| ---------------- | ----------------- | ----------------------------------------------------------------------- | -------- | ---------------------- |
+| `dependencyType` | `"prod" \| "dev"` | Whether to install a production or dev dependency.                      | `"prod"` | all                    |
+| `global`         | `boolean`         | Whether to install the package globally.                                | `false`  | all                    |
+| `exact`          | `boolean`         | Whether exact versions should be used instead of `"^ver.si.on"`.        | `false`  | `install`              |
+| `additionalArgs` | `string[]`        | Additional command line args to pass to the underlying package manager. | none     | `install`, `uninstall` |
 
 ### Find the nearest parent directory with a `package.json`
 

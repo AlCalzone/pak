@@ -154,6 +154,17 @@ describe("yarn.install()", () => {
 			"whatever",
 		]);
 	});
+
+	it("passes the additional args on", async () => {
+		execaMock.mockResolvedValue(return_ok);
+		await yarn.install(["whatever"], {
+			additionalArgs: ["--foo", "--bar"],
+		});
+		expect(execaMock.mock.calls[0][0]).toBe("yarn");
+		expect(execaMock.mock.calls[0][1]).toEqual(
+			expect.arrayContaining(["--foo", "--bar"]),
+		);
+	});
 });
 
 describe("yarn.uninstall()", () => {
@@ -258,6 +269,17 @@ describe("yarn.uninstall()", () => {
 			"remove",
 			"whatever",
 		]);
+	});
+
+	it("passes the additional args on", async () => {
+		execaMock.mockResolvedValue(return_ok);
+		await yarn.install(["whatever"], {
+			additionalArgs: ["--foo", "--bar"],
+		});
+		expect(execaMock.mock.calls[0][0]).toBe("yarn");
+		expect(execaMock.mock.calls[0][1]).toEqual(
+			expect.arrayContaining(["--foo", "--bar"]),
+		);
 	});
 });
 

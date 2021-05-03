@@ -92,6 +92,8 @@ export interface InstallBaseOptions {
 	dependencyType?: "prod" | "dev";
 	/** Whether to install the package globally. Default: false */
 	global?: boolean;
+	/** Additional command line args to pass to the underlying package manager. Default: none */
+	additionalArgs?: string[];
 }
 
 export interface InstallOptions extends InstallBaseOptions {

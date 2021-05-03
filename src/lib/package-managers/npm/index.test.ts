@@ -141,6 +141,16 @@ describe("npm.install()", () => {
 			expect.arrayContaining(["--global"]),
 		);
 	});
+
+	it("passes the additional args on", async () => {
+		execaMock.mockResolvedValue(return_ok);
+		await npm.install(["whatever"], {
+			additionalArgs: ["--foo", "--bar"],
+		});
+		expect(execaMock.mock.calls[0][1]).toEqual(
+			expect.arrayContaining(["--foo", "--bar"]),
+		);
+	});
 });
 
 describe("npm.uninstall()", () => {
@@ -234,6 +244,16 @@ describe("npm.uninstall()", () => {
 		});
 		expect(execaMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--global"]),
+		);
+	});
+
+	it("passes the additional args on", async () => {
+		execaMock.mockResolvedValue(return_ok);
+		await npm.uninstall(["whatever"], {
+			additionalArgs: ["--foo", "--bar"],
+		});
+		expect(execaMock.mock.calls[0][1]).toEqual(
+			expect.arrayContaining(["--foo", "--bar"]),
 		);
 	});
 });

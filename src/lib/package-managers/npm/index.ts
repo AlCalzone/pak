@@ -224,6 +224,10 @@ export class Npm extends PackageManager {
 			args.push("--production");
 		}
 
+		if (options.additionalArgs) {
+			args.push(...options.additionalArgs);
+		}
+
 		return this.command(args);
 	}
 
@@ -240,6 +244,10 @@ export class Npm extends PackageManager {
 			args.push("--loglevel", this.loglevel);
 		}
 		args.push(...packages);
+
+		if (options.additionalArgs) {
+			args.push(...options.additionalArgs);
+		}
 
 		return this.command(args);
 	}

@@ -3,6 +3,9 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## __WORK IN PROGRESS__
+Add option `setCwdToPackageRoot` to automatically set `cwd` to the found package's root dir
+
 ## 0.5.0 (2021-05-03)
 Add support for additional args that are passed as-is to the package manager.
 

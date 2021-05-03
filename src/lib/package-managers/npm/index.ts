@@ -279,11 +279,15 @@ export class Npm extends PackageManager {
 		return this.command(args);
 	}
 
-	public async detect(requireLockfile: boolean = true): Promise<boolean> {
+	public async detect(
+		requireLockfile: boolean = true,
+		setCwdToPackageRoot: boolean = false,
+	): Promise<boolean> {
 		try {
-			await this.findRoot(
+			const root = await this.findRoot(
 				requireLockfile ? "package-lock.json" : undefined,
 			);
+			if (setCwdToPackageRoot) this.cwd = root;
 			return true;
 		} catch {
 			return false;

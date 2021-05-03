@@ -19,7 +19,20 @@ async function main() {
 	const pak = await detectPackageManager();
 
 	// Or use a different directory. The package manager will default to that dir
-	const pak = await detectPackageManager("/path/to/dir");
+	const pak = await detectPackageManager({cwd: "/path/to/dir"});
+}
+```
+
+`detectPackageManager` takes an options object with the following properties:
+
+```ts
+{
+	/** The working directory for the package manager. Detection will start from here upwards. */
+	cwd?: string;
+	/** Whether to change the `cwd` to operate in the package's root directory instead of the current one. */
+	setCwdToPackageRoot?: boolean;
+	/** If this is `false` and no package manager with a matching lockfile was found, another pass is done without requiring one */
+	requireLockfile?: boolean;
 }
 ```
 

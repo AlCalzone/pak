@@ -119,11 +119,18 @@ export class Yarn extends PackageManager {
 		};
 	}
 
-	public async detect(requireLockfile: boolean = true): Promise<boolean> {
+	public async detect(
+		requireLockfile: boolean = true,
+		setCwdToPackageRoot: boolean = false,
+	): Promise<boolean> {
 		try {
-			await this.findRoot(requireLockfile ? "yarn.lock" : undefined);
+			const root = await this.findRoot(
+				requireLockfile ? "yarn.lock" : undefined,
+			);
 			// Check if yarn is version 1
-			return (await this.version()).startsWith("1.");
+			if (!(await this.version()).startsWith("1.")) return false;
+			if (setCwdToPackageRoot) this.cwd = root;
+			return true;
 		} catch {
 			return false;
 		}

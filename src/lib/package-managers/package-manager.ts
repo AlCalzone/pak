@@ -7,8 +7,12 @@ export abstract class PackageManager {
 	/**
 	 * Tests if this package manager should be active in the current directory.
 	 * @param requireLockfile Whether a matching lockfile must be present for the check to succeed
+	 * @param setCwdToPackageRoot Whether the cwd of the package manager should be set to the directory where the lockfile or package.json was found
 	 */
-	public abstract detect(requireLockfile?: boolean): Promise<boolean>;
+	public abstract detect(
+		requireLockfile?: boolean,
+		setCwdToPackageRoot?: boolean,
+	): Promise<boolean>;
 
 	/** Installs the specified packages */
 	public abstract install(

@@ -465,4 +465,20 @@ describe("npm.detect()", () => {
 
 		await expect(pm.detect()).resolves.toBe(false);
 	});
+
+	it("updates the cwd when the setCwdToPackageRoot option is set", async () => {
+		pathExistsMock.mockImplementation((filename: string) => {
+			if (filename.replace(/\\/g, "/") === "/path/to/package.json")
+				return Promise.resolve(true);
+			if (filename.replace(/\\/g, "/") === "/path/to/package-lock.json")
+				return Promise.resolve(true);
+			return Promise.resolve(false);
+		});
+
+		const pm = new Npm();
+		pm.cwd = "/path/to/sub/directory/cwd";
+
+		await pm.detect(true, true);
+		expect(pm.cwd).toBe("/path/to");
+	});
 });

@@ -3,6 +3,10 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## __WORK IN PROGRESS__
+* Add support for Yarn Berry (v2+)
+* `packageManagers.yarn` now defaults to Yarn Berry. To explicitly use Yarn Classic (v1), use `packageManagers.yarnClassic`.
+
 ## 0.6.0 (2021-05-03)
 Add option `setCwdToPackageRoot` to automatically set `cwd` to the found package's root dir
 

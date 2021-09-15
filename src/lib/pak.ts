@@ -1,9 +1,11 @@
 import { Npm } from "./package-managers/npm";
 import type { PackageManager } from "./package-managers/package-manager";
-import { Yarn } from "./package-managers/yarn";
+import { YarnBerry } from "./package-managers/yarn-berry";
+import { YarnClassic } from "./package-managers/yarn-classic";
 
 export const packageManagers = Object.freeze({
-	yarn: Yarn,
+	yarn: YarnBerry,
+	yarnClassic: YarnClassic,
 	npm: Npm,
 });
 

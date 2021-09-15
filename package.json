@@ -13,7 +13,6 @@
   "repository": "https://github.com/AlCalzone/pak.git",
   "author": "Dominic Griesel <d.griesel@gmx.net>",
   "license": "MIT",
-  "private": false,
   "scripts": {
     "test:reset": "jest --clear-cache",
     "test:ts": "jest",

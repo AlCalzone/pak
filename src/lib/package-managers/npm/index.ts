@@ -38,7 +38,7 @@ async function resolveDependency(
 	try {
 		reg = (await axios.get(`https://registry.npmjs.org/${dependency}`))
 			.data;
-	} catch (e) {
+	} catch (e: any) {
 		throw new Error(
 			`Failed to download package info from npm registry: ${e.message}`,
 		);
@@ -328,7 +328,7 @@ export class Npm extends PackageManager {
 			rootPackageLock = await fs.readJson(rootPackageLockPath, {
 				encoding: "utf8",
 			});
-		} catch (e) {
+		} catch (e: any) {
 			return fail(
 				`Error loading root package.json and package-lock.json: ${e.message}`,
 			);
@@ -348,7 +348,7 @@ export class Npm extends PackageManager {
 		for (const [dep, version] of Object.entries(dependencies)) {
 			try {
 				overrides[dep] = await resolveDependency(dep, version);
-			} catch (e) {
+			} catch (e: any) {
 				return fail(e.message);
 			}
 		}
@@ -402,7 +402,7 @@ export class Npm extends PackageManager {
 				spaces: 2,
 				encoding: "utf8",
 			});
-		} catch (e) {
+		} catch (e: any) {
 			return fail(`Error updating package files: ${e.message}`);
 		}
 

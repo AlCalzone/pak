@@ -16,7 +16,7 @@ function setLoglevel(args: string[], loglevel: PackageManager["loglevel"]) {
 	}
 }
 
-export class Yarn extends PackageManager {
+export class YarnClassic extends PackageManager {
 	/** Executes a "raw" yarn command */
 	private async command(
 		args: string[],
@@ -109,7 +109,7 @@ export class Yarn extends PackageManager {
 	}
 
 	public async rebuild(): Promise<CommandResult> {
-		const stderr = `yarn does not support the "rebuild" command!`;
+		const stderr = `yarn classic does not support the "rebuild" command!`;
 		return {
 			success: false,
 			exitCode: 1,
@@ -167,7 +167,7 @@ export class Yarn extends PackageManager {
 				spaces: 2,
 				encoding: "utf8",
 			});
-		} catch (e) {
+		} catch (e: any) {
 			const stderr = "Error updating root package.json: " + e.message;
 			return {
 				success: false,

@@ -1,6 +1,6 @@
 import execa from "execa";
 import fsExtra from "fs-extra";
-import { Yarn } from ".";
+import { YarnBerry } from ".";
 
 jest.mock("fs-extra");
 const pathExistsMock = fsExtra.pathExists as jest.Mock;
@@ -23,7 +23,7 @@ const return_version: execa.ExecaReturnValue<string> = {
 	command: "yarn -v",
 	exitCode: 0,
 	stderr: "",
-	stdout: "1.2.3",
+	stdout: "2.0.1",
 	isCanceled: false,
 	failed: false,
 	timedOut: false,
@@ -42,10 +42,10 @@ const return_nok: execa.ExecaReturnValue<string> = {
 };
 
 describe("yarn.install()", () => {
-	let yarn: Yarn;
+	let yarn: YarnBerry;
 
 	beforeEach(() => {
-		yarn = new Yarn();
+		yarn = new YarnBerry();
 		execaMock.mockReset();
 	});
 
@@ -105,7 +105,8 @@ describe("yarn.install()", () => {
 		expect(execaMock.mock.calls[0][2]).toMatchObject({ cwd: yarn.cwd });
 	});
 
-	it("respects the package manager's loglevel where supported", async () => {
+	// Yarn Berry doesn't support changing the loglevel
+	it.skip("respects the package manager's loglevel where supported", async () => {
 		execaMock.mockResolvedValue(return_ok);
 		yarn.loglevel = "verbose";
 		await yarn.install(["whatever"]);
@@ -143,16 +144,12 @@ describe("yarn.install()", () => {
 	});
 
 	it("respects the global option", async () => {
-		execaMock.mockResolvedValue(return_ok);
-		await yarn.install(["whatever"], {
+		const result = await yarn.install(["whatever"], {
 			global: true,
 		});
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual([
-			"global",
-			"add",
-			"whatever",
-		]);
+
+		expect(result.success).toBe(false);
+		expect(result.stderr).toMatch(`does not support global`);
 	});
 
 	it("passes the additional args on", async () => {
@@ -168,10 +165,10 @@ describe("yarn.install()", () => {
 });
 
 describe("yarn.uninstall()", () => {
-	let yarn: Yarn;
+	let yarn: YarnBerry;
 
 	beforeEach(() => {
-		yarn = new Yarn();
+		yarn = new YarnBerry();
 		execaMock.mockReset();
 	});
 
@@ -231,7 +228,8 @@ describe("yarn.uninstall()", () => {
 		expect(execaMock.mock.calls[0][2]).toMatchObject({ cwd: yarn.cwd });
 	});
 
-	it("respects the package manager's loglevel where supported", async () => {
+	// Yarn Berry doesn't support changing the loglevel
+	it.skip("respects the package manager's loglevel where supported", async () => {
 		execaMock.mockResolvedValue(return_ok);
 		yarn.loglevel = "verbose";
 		await yarn.uninstall(["whatever"]);
@@ -254,21 +252,17 @@ describe("yarn.uninstall()", () => {
 			dependencyType: "dev",
 		});
 		expect(execaMock.mock.calls[0][1]).toEqual(
-			expect.arrayContaining(["--dev"]),
+			expect.not.arrayContaining(["--dev"]),
 		);
 	});
 
 	it("respects the global option", async () => {
-		execaMock.mockResolvedValue(return_ok);
-		await yarn.uninstall(["whatever"], {
+		const result = await yarn.uninstall(["whatever"], {
 			global: true,
 		});
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual([
-			"global",
-			"remove",
-			"whatever",
-		]);
+
+		expect(result.success).toBe(false);
+		expect(result.stderr).toMatch(`does not support global`);
 	});
 
 	it("passes the additional args on", async () => {
@@ -284,10 +278,10 @@ describe("yarn.uninstall()", () => {
 });
 
 describe("yarn.update()", () => {
-	let yarn: Yarn;
+	let yarn: YarnBerry;
 
 	beforeEach(() => {
-		yarn = new Yarn();
+		yarn = new YarnBerry();
 		execaMock.mockReset();
 	});
 
@@ -347,7 +341,8 @@ describe("yarn.update()", () => {
 		expect(execaMock.mock.calls[0][2]).toMatchObject({ cwd: yarn.cwd });
 	});
 
-	it("respects the package manager's loglevel where supported", async () => {
+	// Yarn Berry doesn't support changing the loglevel
+	it.skip("respects the package manager's loglevel where supported", async () => {
 		execaMock.mockResolvedValue(return_ok);
 		yarn.loglevel = "verbose";
 		await yarn.update(["whatever"]);
@@ -375,33 +370,40 @@ describe("yarn.update()", () => {
 	});
 
 	it("respects the global option", async () => {
-		execaMock.mockResolvedValue(return_ok);
-		await yarn.update(["whatever"], {
+		const result = await yarn.update(["whatever"], {
 			global: true,
 		});
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual([
-			"global",
-			"add",
-			"whatever",
-		]);
+
+		expect(result.success).toBe(false);
+		expect(result.stderr).toMatch(`does not support global`);
 	});
 });
 
 describe("yarn.rebuild()", () => {
-	let yarn: Yarn;
+	let yarn: YarnBerry;
 
 	beforeEach(() => {
-		yarn = new Yarn();
+		yarn = new YarnBerry();
 		execaMock.mockReset();
 	});
 
-	it("is not supported", async () => {
-		const result = await yarn.rebuild();
-		expect(result.success).toBe(false);
-		expect(result.stderr).toBe(
-			`yarn does not support the "rebuild" command!`,
-		);
+	it("executes the correct command", async () => {
+		execaMock.mockResolvedValue(return_ok);
+		await yarn.rebuild(["whatever"]);
+		expect(execaMock.mock.calls[0][0]).toBe("yarn");
+		expect(execaMock.mock.calls[0][1]).toEqual(["rebuild", "whatever"]);
+	});
+
+	it("handles multiple packages", async () => {
+		execaMock.mockResolvedValue(return_ok);
+		await yarn.rebuild(["all", "these", "packages"]);
+		expect(execaMock.mock.calls[0][0]).toBe("yarn");
+		expect(execaMock.mock.calls[0][1]).toEqual([
+			"rebuild",
+			"all",
+			"these",
+			"packages",
+		]);
 	});
 });
 
@@ -416,7 +418,7 @@ describe("yarn.detect()", () => {
 		});
 		execaMock.mockReset().mockResolvedValue(return_version);
 
-		const pm = new Yarn();
+		const pm = new YarnBerry();
 		pm.cwd = "/path/to/sub/directory/cwd";
 
 		await expect(pm.detect()).resolves.toBe(true);
@@ -429,7 +431,7 @@ describe("yarn.detect()", () => {
 			return Promise.resolve(false);
 		});
 
-		const pm = new Yarn();
+		const pm = new YarnBerry();
 		pm.cwd = "/path/to/sub/directory/cwd";
 
 		await expect(pm.detect()).resolves.toBe(false);
@@ -438,7 +440,7 @@ describe("yarn.detect()", () => {
 	it("returns false when the root dir cannot be found", async () => {
 		pathExistsMock.mockResolvedValue(false);
 
-		const pm = new Yarn();
+		const pm = new YarnBerry();
 		pm.cwd = "/path/to/sub/directory/cwd";
 
 		await expect(pm.detect()).resolves.toBe(false);
@@ -454,7 +456,7 @@ describe("yarn.detect()", () => {
 		});
 		execaMock.mockReset().mockResolvedValue(return_version);
 
-		const pm = new Yarn();
+		const pm = new YarnBerry();
 		pm.cwd = "/path/to/sub/directory/cwd";
 		await pm.detect(true, true);
 		expect(pm.cwd).toBe("/path/to");

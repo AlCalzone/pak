@@ -103,6 +103,8 @@ export interface InstallBaseOptions {
 export interface InstallOptions extends InstallBaseOptions {
 	/** Whether exact versions should be used instead of "^ver.si.on". Default: false */
 	exact?: boolean;
+	/** Prevent execution of pre/post/install scripts. Default: false (execute scripts) */
+	ignoreScripts?: boolean;
 }
 
 export type UninstallOptions = InstallBaseOptions;

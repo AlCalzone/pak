@@ -3,6 +3,9 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## __WORK IN PROGRESS__
+Add the install option `ignoreScripts` which prevents execution of pre/post/install scripts for Yarn Classic and npm
+
 ## 0.7.0 (2021-09-15)
 * Add support for Yarn Berry (v2+)
 * `packageManagers.yarn` now defaults to Yarn Berry. To explicitly use Yarn Classic (v1), use `packageManagers.yarnClassic`.

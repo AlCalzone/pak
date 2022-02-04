@@ -68,6 +68,9 @@ export class YarnClassic extends PackageManager {
 			if (this.environment === "production") {
 				args.push("--production");
 			}
+			if (options.ignoreScripts) {
+				args.push("--ignore-scripts");
+			}
 		}
 		setLoglevel(args, this.loglevel);
 

@@ -220,8 +220,13 @@ export class Npm extends PackageManager {
 		}
 		args.push(...packages);
 
-		if (!packages.length && this.environment === "production") {
-			args.push("--production");
+		if (packages.length === 0) {
+			if (this.environment === "production") {
+				args.push("--production");
+			}
+			if (options.ignoreScripts) {
+				args.push("--ignore-scripts");
+			}
 		}
 
 		if (options.additionalArgs) {

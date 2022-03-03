@@ -6,7 +6,7 @@ jest.mock("fs-extra");
 const pathExistsMock = fsExtra.pathExists as jest.Mock;
 
 jest.mock("execa");
-const execaMock = (execa as any) as jest.Mock;
+const execaMock = execa as any as jest.Mock;
 
 const return_ok: execa.ExecaReturnValue<string> = {
 	command: "foobar",

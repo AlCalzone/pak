@@ -3,7 +3,7 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
-## __WORK IN PROGRESS__
+## 0.8.1 (2022-03-03)
 Upgrade dependencies
 
 ## 0.8.0 (2022-02-04)

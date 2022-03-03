@@ -3,6 +3,9 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## __WORK IN PROGRESS__
+Upgrade dependencies
+
 ## 0.8.0 (2022-02-04)
 Add the install option `ignoreScripts` which prevents execution of pre/post/install scripts for Yarn Classic and npm
 

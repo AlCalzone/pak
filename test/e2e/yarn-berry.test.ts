@@ -35,14 +35,12 @@ describe("End to end tests - yarn berry", () => {
 	});
 
 	it("is actually using yarn berry", async () => {
-		jest.setTimeout(60000);
 		const yarn = new packageManagers.yarn();
 		yarn.cwd = testDir;
 		await expect(yarn.version()).resolves.toBe("3.0.2");
-	});
+	}, 60000);
 
 	it("installs und uninstalls correctly", async () => {
-		jest.setTimeout(60000);
 		let packageJson: Record<string, any> = {
 			name: "test",
 			version: "0.0.1",
@@ -74,10 +72,9 @@ describe("End to end tests - yarn berry", () => {
 
 		expect(packageJson.dependencies ?? {}).not.toHaveProperty("is-even");
 		expect(packageJson.devDependencies ?? {}).not.toHaveProperty("is-odd");
-	});
+	}, 60000);
 
 	it("overriding dependencies works", async () => {
-		jest.setTimeout(60000);
 		const packageJson: Record<string, any> = {
 			name: "test",
 			version: "0.0.1",
@@ -130,11 +127,10 @@ describe("End to end tests - yarn berry", () => {
 			},
 		);
 		expect(version.stdout).toBe("1.0.0");
-	});
+	}, 60000);
 
 	// Yarn berry does not support the --production flag
 	it.skip("does not install devDependencies, unless the environment is set to development", async () => {
-		jest.setTimeout(60000);
 		const packageJson: Record<string, any> = {
 			name: "test",
 			version: "0.0.1",
@@ -172,7 +168,8 @@ describe("End to end tests - yarn berry", () => {
 		);
 		// now it is
 		expect(version.stdout).toBe("3.0.0");
-	});
+	}, 60000);
+
 	afterEach(async () => {
 		await promisify(rimraf)(testDir);
 	});

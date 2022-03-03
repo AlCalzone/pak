@@ -17,7 +17,6 @@ describe("End to end tests - yarn classic", () => {
 	});
 
 	it("installs und uninstalls correctly", async () => {
-		jest.setTimeout(60000);
 		let packageJson: Record<string, any> = {
 			name: "test",
 			version: "0.0.1",
@@ -49,10 +48,9 @@ describe("End to end tests - yarn classic", () => {
 
 		expect(packageJson.dependencies ?? {}).not.toHaveProperty("is-even");
 		expect(packageJson.devDependencies ?? {}).not.toHaveProperty("is-odd");
-	});
+	}, 60000);
 
 	it("overriding dependencies works", async () => {
-		jest.setTimeout(60000);
 		const packageJson: Record<string, any> = {
 			name: "test",
 			version: "0.0.1",
@@ -99,10 +97,9 @@ describe("End to end tests - yarn classic", () => {
 			},
 		);
 		expect(version.stdout).toBe("1.0.0");
-	});
+	}, 60000);
 
 	it("does not install devDependencies, unless the environment is set to development", async () => {
-		jest.setTimeout(60000);
 		const packageJson: Record<string, any> = {
 			name: "test",
 			version: "0.0.1",
@@ -140,7 +137,8 @@ describe("End to end tests - yarn classic", () => {
 		);
 		// now it is
 		expect(version.stdout).toBe("3.0.0");
-	});
+	}, 60000);
+
 	afterEach(async () => {
 		await promisify(rimraf)(testDir);
 	});

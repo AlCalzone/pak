@@ -14,7 +14,21 @@ describe("End to end tests - yarn classic", () => {
 		testDir = path.join(os.tmpdir(), "pak-test-yarn-classic");
 		await promisify(rimraf)(testDir);
 		await ensureDir(testDir);
+		// Remove temporary yarn paths from the env variable, otherwise the local yarn will be executed
+		process.env.PATH = process.env
+			.PATH!.split(path.delimiter)
+			.filter((part) => !/xfs-[0-9a-f]{8,}$/.test(part))
+			.join(path.delimiter);
+		delete process.env.BERRY_BIN_FOLDER;
+		delete process.env.npm_execpath;
 	});
+
+	it("is actually using yarn classic", async () => {
+		const yarn = new packageManagers.yarnClassic();
+		yarn.cwd = testDir;
+		const version = await yarn.version();
+		expect(version.startsWith("1")).toBe(true);
+	}, 60000);
 
 	it("installs und uninstalls correctly", async () => {
 		let packageJson: Record<string, any> = {

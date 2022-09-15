@@ -88,7 +88,6 @@ describe("End to end tests - yarn berry", () => {
 
 		// is-even@1.0.0 includes is-odd@^0.1.2, which also has newer versions (1.0.0+)
 		let result = await yarn.install(["is-even@1.0.0"]);
-		console.error(result.stdall);
 		expect(result.success).toBe(true);
 
 		let version = await execa(

@@ -22,7 +22,7 @@ describe("End to end tests - yarn berry", () => {
 		await promisify(rimraf)(testDir);
 		await ensureDir(testDir);
 		// Upgrade it to yarn v3
-		for (const file of [".yarnrc.yml", ".yarn/releases/yarn-3.0.2.cjs"]) {
+		for (const file of [".yarnrc.yml", ".yarn/releases/yarn-3.2.3.cjs"]) {
 			const source = path.join(__dirname, file);
 			const target = path.join(testDir, file);
 			await emptyDir(path.dirname(target));
@@ -37,7 +37,7 @@ describe("End to end tests - yarn berry", () => {
 	it("is actually using yarn berry", async () => {
 		const yarn = new packageManagers.yarn();
 		yarn.cwd = testDir;
-		await expect(yarn.version()).resolves.toBe("3.0.2");
+		await expect(yarn.version()).resolves.toBe("3.2.3");
 	}, 60000);
 
 	it("installs und uninstalls correctly", async () => {

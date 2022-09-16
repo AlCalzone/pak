@@ -2,9 +2,19 @@
 .*/
 !.vscode/
 !.github/
+!.yarn/
 !test/**/.yarn
 node_modules
 nbproject
+
+# Yarn config and stuff
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
 
 # Sourcemaps
 maps/

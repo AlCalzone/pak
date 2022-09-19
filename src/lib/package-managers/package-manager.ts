@@ -1,5 +1,7 @@
+import glob from "tiny-glob";
 import type { ExecaReturnValue } from "execa";
 import { pathExists } from "fs-extra";
+import * as fs from "fs-extra";
 import path from "path";
 import type { Writable } from "stream";
 
@@ -89,6 +91,37 @@ export abstract class PackageManager {
 	 * In an production environment, `pak` avoids accidentally pulling in `devDependencies`.
 	 */
 	public environment: "production" | "development" = "production";
+
+	/** Resolves absolute paths of all workspaces defined in the current monorepo */
+	public async workspaces(): Promise<string[]> {
+		const packageJsonPath = path.join(this.cwd, "package.json");
+		const packageJson = await fs.readJson(packageJsonPath, {
+			encoding: "utf8",
+		});
+		const workspaces = packageJson.workspaces;
+		if (!workspaces?.length) return [];
+
+		// Workspaces are globs we need to resolve
+		const ret = new Set<string>();
+		for (const ws of workspaces) {
+			const resolved = await glob(ws, {
+				cwd: this.cwd,
+				absolute: true,
+			});
+			// Check every potential directory if it contains a package.json
+			for (const r of resolved) {
+				const workspacePackageJsonPath = path.join(r, "package.json");
+				try {
+					if ((await fs.stat(workspacePackageJsonPath)).isFile()) {
+						ret.add(r);
+					}
+				} catch {
+					// Does not exist, ignore
+				}
+			}
+		}
+		return [...ret].sort();
+	}
 }
 
 export interface InstallBaseOptions {

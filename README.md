@@ -180,3 +180,25 @@ const workspaces = await pak.workspaces();
 
 Returns an array of strings including the paths of all workspaces in the current monorepo. This will return an empty array if the current directory is not part of a monorepo.
 A folder will be considered a workspace if it contains a file `package.json` and it is referenced in the `workspaces` property of the root `package.json`.
+
+### Pack a project or monorepo package into an installable tarball
+
+```ts
+const result = await pak.pack(options);
+```
+
+`options` are optional and control what gets packed where and has the following shape:
+
+```ts
+interface PackOptions {
+	/**
+	 * In monorepos, this determines which workspace to pack. Defaults to the current working directory.
+	 * This must be a path relative to the repo root.
+	 */
+	workspace?: string;
+	/** Where to save the packed tarball. Defaults to the current working directory */
+	targetDir?: string;
+}
+```
+
+`result` is a `CommandResult` (see above) where the `stdout` contains the absolute path of the packed tarball.

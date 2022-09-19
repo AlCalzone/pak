@@ -18,6 +18,7 @@ __metadata:
     "@types/jest": ^29.0.2
     "@types/node": ^14.18.29
     "@types/rimraf": ^3.0.2
+    "@types/semver": ^7.3.12
     "@typescript-eslint/eslint-plugin": ^5.37.0
     "@typescript-eslint/parser": ^5.37.0
     axios: ^0.27.2
@@ -31,6 +32,7 @@ __metadata:
     prettier: ^2.7.1
     prettier-plugin-organize-imports: ^3.1.1
     rimraf: ^3.0.2
+    semver: ^7.3.7
     source-map-support: ^0.5.21
     tiny-glob: ^0.2.9
     typescript: ~4.8.3
@@ -2312,6 +2314,13 @@ __metadata:
     "@types/glob": "*"
     "@types/node": "*"
   checksum: b47fa302f46434cba704d20465861ad250df79467d3d289f9d6490d3aeeb41e8cb32dd80bd1a8fd833d1e185ac719fbf9be12e05ad9ce9be094d8ee8f1405347
+  languageName: node
+  linkType: hard
+
+"@types/semver@npm:^7.3.12":
+  version: 7.3.12
+  resolution: "@types/semver@npm:7.3.12"
+  checksum: 35536b2fc5602904f21cae681f6c9498e177dab3f54ae37c92f9a1b7e43c35f18bcd81e1c98c1cf0d33ee046bb06c771e9928c1c00a401d56a03f56549252a15
   languageName: node
   linkType: hard
 

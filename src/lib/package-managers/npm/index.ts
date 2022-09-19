@@ -7,9 +7,11 @@ import {
 	execaReturnValueToCommandResult,
 	InstallOptions,
 	PackageManager,
+	PackOptions,
 	UninstallOptions,
 	UpdateOptions,
 } from "../package-manager";
+import { gte } from "semver";
 
 const exactVersionRegex = /.+@\d+/;
 
@@ -18,16 +20,6 @@ interface ResolvedDependency {
 	integrity: string;
 	tarball: string;
 	dependencies: Record<string, string>;
-}
-
-function fail(message: string): CommandResult {
-	return {
-		success: false,
-		exitCode: 1,
-		stdout: "",
-		stderr: message,
-		stdall: message,
-	};
 }
 
 async function resolveDependency(
@@ -422,6 +414,77 @@ export class Npm extends PackageManager {
 			return ret;
 		} finally {
 			this.cwd = prevCwd;
+		}
+	}
+
+	public async pack({
+		targetDir = this.cwd,
+		workspace = ".",
+	}: PackOptions = {}): Promise<CommandResult> {
+		const workspaceDir = path.join(this.cwd, workspace);
+
+		const npmVersion = await this.version();
+		if (gte(npmVersion, "7.0.0")) {
+			// Make sure the target dir exists
+			await fs.ensureDir(targetDir);
+
+			// npm7+ lets us specify where to place the tarball
+			const prevCwd = this.cwd;
+			this.cwd = workspaceDir;
+			try {
+				const result = await this.command([
+					"pack",
+					"--pack-destination",
+					targetDir,
+				]);
+				return {
+					...result,
+					// npm outputs the filename of the tarball as stdout, we want the full path
+					stdout: path.join(targetDir, result.stdout),
+				};
+			} finally {
+				this.cwd = prevCwd;
+			}
+		} else {
+			if (workspace !== ".") {
+				return this.fail(
+					`npm ${npmVersion} does not support monorepos`,
+				);
+			}
+			// Make sure the target dir exists
+			await fs.ensureDir(targetDir);
+
+			// Determine the name of the tarball. npm6 has different rules than the newer versions
+			const packageJsonPath = path.join(workspaceDir, "package.json");
+			const packageJson = await fs.readJson(packageJsonPath, "utf8");
+			const packageName = packageJson.name
+				.replace("/", "-")
+				.replace(/^@/, "");
+			const version = packageJson.version;
+			const targetPath = path.join(
+				targetDir,
+				`${packageName}-${version}.tgz`,
+			);
+
+			const prevCwd = this.cwd;
+			this.cwd = workspaceDir;
+			try {
+				const result = await this.command(["pack"]);
+				if (!result.success) return result;
+
+				const npmTarballPath = path.join(workspaceDir, result.stdout);
+				if (npmTarballPath !== targetPath) {
+					// Rename the tarball to the expected name
+					await fs.move(npmTarballPath, targetPath);
+				}
+
+				return {
+					...result,
+					stdout: targetPath,
+				};
+			} finally {
+				this.cwd = prevCwd;
+			}
 		}
 	}
 }

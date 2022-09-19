@@ -2,10 +2,13 @@
 
 Programmatic wrapper around popular Node.js package managers
 
-Roadmap:
+Supports:
 
 -   [x] `npm`
--   [x] `yarn 1`
+-   [x] `Yarn Classic`
+-   [x] `Yarn Berry`
+
+_(not all features are available for all package managers)_
 
 ## Usage
 

@@ -3,6 +3,9 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## __WORK IN PROGRESS__
+* Add support for enumerating workspaces in a monorepo
+
 ## 0.8.1 (2022-03-03)
 Upgrade dependencies
 

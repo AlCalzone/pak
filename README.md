@@ -19,7 +19,7 @@ async function main() {
 	const pak = await detectPackageManager();
 
 	// Or use a different directory. The package manager will default to that dir
-	const pak = await detectPackageManager({cwd: "/path/to/dir"});
+	const pak = await detectPackageManager({ cwd: "/path/to/dir" });
 }
 ```
 
@@ -171,3 +171,12 @@ const version = await pak.version();
 ```
 
 Returns a string with the package manager's version.
+
+### Get the paths of all workspaces in the current monorepo
+
+```ts
+const workspaces = await pak.workspaces();
+```
+
+Returns an array of strings including the paths of all workspaces in the current monorepo. This will return an empty array if the current directory is not part of a monorepo.
+A folder will be considered a workspace if it contains a file `package.json` and it is referenced in the `workspaces` property of the root `package.json`.

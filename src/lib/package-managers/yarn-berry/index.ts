@@ -6,6 +6,7 @@ import {
 	execaReturnValueToCommandResult,
 	InstallOptions,
 	PackageManager,
+	PackOptions,
 	UninstallOptions,
 	UpdateOptions,
 } from "../package-manager";
@@ -40,17 +41,6 @@ export class YarnBerry extends PackageManager {
 
 		// Translate the returned result
 		return execaReturnValueToCommandResult(result);
-	}
-
-	private fail(message: string): Promise<CommandResult> {
-		const stderr = message;
-		return Promise.resolve({
-			success: false,
-			exitCode: 1,
-			stdout: "",
-			stderr,
-			stdall: stderr,
-		});
 	}
 
 	/**
@@ -196,6 +186,40 @@ export class YarnBerry extends PackageManager {
 		this.cwd = root;
 		try {
 			return await this.install();
+		} finally {
+			this.cwd = prevCwd;
+		}
+	}
+
+	public async pack({
+		targetDir = this.cwd,
+		workspace = ".",
+	}: PackOptions = {}): Promise<CommandResult> {
+		const workspaceDir = path.join(this.cwd, workspace);
+		// Make sure the target dir exists
+		await fs.ensureDir(targetDir);
+
+		// Yarn expects the path to the file to be generated, unlike npm. So we need to determine it ourselves.
+		const packageJsonPath = path.join(workspaceDir, "package.json");
+		const packageJson = await fs.readJson(packageJsonPath, "utf8");
+		const packageName = packageJson.name
+			.replace("/", "-")
+			.replace(/^@/, "");
+		const version = packageJson.version;
+		const targetPath = path.join(
+			targetDir,
+			`${packageName}-${version}.tgz`,
+		);
+
+		const prevCwd = this.cwd;
+		this.cwd = workspaceDir;
+		try {
+			const result = await this.command(["pack", "--out", targetPath]);
+			return {
+				...result,
+				// Yarn outputs a lot, not only the target path of the file. Manually return the absolute path.
+				stdout: targetPath,
+			};
 		} finally {
 			this.cwd = prevCwd;
 		}

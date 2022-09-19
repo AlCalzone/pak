@@ -3,6 +3,7 @@ import { ensureDir, readJson, writeJson } from "fs-extra";
 import os from "os";
 import path from "path";
 import rimraf from "rimraf";
+import fs from "fs-extra";
 import { promisify } from "util";
 import { packageManagers } from "../../src/index";
 
@@ -14,6 +15,10 @@ describe("End to end tests - npm", () => {
 		testDir = path.join(os.tmpdir(), "pak-test-npm");
 		await promisify(rimraf)(testDir);
 		await ensureDir(testDir);
+	});
+
+	afterEach(async () => {
+		await promisify(rimraf)(testDir);
 	});
 
 	it("installs und uninstalls correctly", async () => {
@@ -137,7 +142,83 @@ describe("End to end tests - npm", () => {
 		expect(version.stdout).toBe("3.0.0");
 	}, 60000);
 
-	afterEach(async () => {
-		await promisify(rimraf)(testDir);
-	});
+	it("packs non-monorepo projects correctly", async () => {
+		const packageJson: Record<string, any> = {
+			name: "test",
+			version: "0.0.1",
+		};
+		const packageJsonPath = path.join(testDir, "package.json");
+		await writeJson(packageJsonPath, packageJson);
+
+		const npm = new packageManagers.npm();
+		npm.cwd = testDir;
+
+		const result = await npm.pack({
+			targetDir: path.join(testDir, "foo/bar"),
+		});
+		expect(result.stdout).toBe(
+			path.join(testDir, "foo/bar/test-0.0.1.tgz"),
+		);
+		expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+	}, 60000);
+
+	it("packs scoped non-monorepo projects correctly", async () => {
+		const packageJson: Record<string, any> = {
+			name: "@scope/test",
+			version: "0.0.1-beta.0+1234",
+		};
+		const packageJsonPath = path.join(testDir, "package.json");
+		await writeJson(packageJsonPath, packageJson);
+
+		const npm = new packageManagers.npm();
+		npm.cwd = testDir;
+
+		const result = await npm.pack();
+		expect(result.stdout).toBe(
+			path.join(testDir, "scope-test-0.0.1-beta.0+1234.tgz"),
+		);
+		expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+	}, 60000);
+
+	it("packs monorepo workspaces correctly", async () => {
+		const packageJson: Record<string, any> = {
+			name: "test",
+			version: "0.0.1",
+			workspaces: ["packages/*"],
+		};
+		const packageJsonPath = path.join(testDir, "package.json");
+		await writeJson(packageJsonPath, packageJson);
+
+		// Create directories for the workspaces
+		await ensureDir(path.join(testDir, "packages", "package-a"));
+		await ensureDir(path.join(testDir, "packages", "package-b"));
+		// Create package.json in workspace dirs
+		await writeJson(
+			path.join(testDir, "packages", "package-a", "package.json"),
+			{ name: "@test/package-a", version: "0.0.1" },
+		);
+		await writeJson(
+			path.join(testDir, "packages", "package-b", "package.json"),
+			{ name: "@test/package-b", version: "0.0.2" },
+		);
+
+		const npm = new packageManagers.npm();
+		npm.cwd = testDir;
+
+		let result = await npm.pack({
+			workspace: "packages/package-a",
+		});
+		expect(result.stdout).toBe(
+			path.join(testDir, "test-package-a-0.0.1.tgz"),
+		);
+		expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+
+		result = await npm.pack({
+			workspace: "packages/package-b",
+		});
+		expect(result.stdout).toBe(
+			path.join(testDir, "test-package-b-0.0.2.tgz"),
+		);
+		expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+	}, 60000);
 });

@@ -7,6 +7,7 @@ import {
 	execaReturnValueToCommandResult,
 	InstallOptions,
 	PackageManager,
+	PackOptions,
 	UninstallOptions,
 	UpdateOptions,
 } from "../package-manager";
@@ -18,16 +19,6 @@ interface ResolvedDependency {
 	integrity: string;
 	tarball: string;
 	dependencies: Record<string, string>;
-}
-
-function fail(message: string): CommandResult {
-	return {
-		success: false,
-		exitCode: 1,
-		stdout: "",
-		stderr: message,
-		stdall: message,
-	};
 }
 
 async function resolveDependency(
@@ -420,6 +411,32 @@ export class Npm extends PackageManager {
 			// Force npm to restore the original structure
 			await this.command(["dedupe"]);
 			return ret;
+		} finally {
+			this.cwd = prevCwd;
+		}
+	}
+
+	public async pack({
+		targetDir = this.cwd,
+		workspace = ".",
+	}: PackOptions = {}): Promise<CommandResult> {
+		const workspaceDir = path.join(this.cwd, workspace);
+		// Make sure the target dir exists
+		await fs.ensureDir(targetDir);
+
+		const prevCwd = this.cwd;
+		this.cwd = workspaceDir;
+		try {
+			const result = await this.command([
+				"pack",
+				"--pack-destination",
+				targetDir,
+			]);
+			return {
+				...result,
+				// npm outputs the filename of the tarball as stdout, we want the full path
+				stdout: path.join(targetDir, result.stdout),
+			};
 		} finally {
 			this.cwd = prevCwd;
 		}

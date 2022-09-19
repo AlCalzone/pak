@@ -6,6 +6,7 @@ import {
 	execaReturnValueToCommandResult,
 	InstallOptions,
 	PackageManager,
+	PackOptions,
 	UninstallOptions,
 	UpdateOptions,
 } from "../package-manager";
@@ -189,5 +190,9 @@ export class YarnClassic extends PackageManager {
 		} finally {
 			this.cwd = prevCwd;
 		}
+	}
+
+	public pack(_options?: PackOptions): Promise<CommandResult> {
+		return this.fail(`yarn classic does not support packing tarballs!`);
 	}
 }

@@ -40,6 +40,17 @@ export abstract class PackageManager {
 	/** Returns the active version of the package manager */
 	public abstract version(): Promise<string>;
 
+	protected fail(message: string): Promise<CommandResult> {
+		const stderr = message;
+		return Promise.resolve({
+			success: false,
+			exitCode: 1,
+			stdout: "",
+			stderr,
+			stdall: stderr,
+		});
+	}
+
 	/** Finds the closest parent directory that contains a package.json and the corresponding lockfile (if one was specified) */
 	public async findRoot(lockfile?: string): Promise<string> {
 		let curDir = this.cwd;
@@ -69,28 +80,6 @@ export abstract class PackageManager {
 	public abstract overrideDependencies(
 		dependencies: Record<string, string>,
 	): Promise<CommandResult>;
-
-	/** The directory to run the package manager commands in */
-	public cwd: string = process.cwd();
-
-	/** Which loglevel to pass to the package manager */
-	public loglevel?: "info" | "verbose" | "warn" | "error" | "silent";
-
-	/** The (optional) stream to pipe the command's stdout into */
-	public stdout?: Writable;
-	/** The (optional) stream to pipe the command's stderr into */
-	public stderr?: Writable;
-	/**
-	 * The (optional) stream to pipe the command's entire output (stdout + stderr) into.
-	 * If this is set, stdout and stderr will be ignored
-	 */
-	public stdall?: Writable;
-
-	/**
-	 * The environment the package manager is executed in (default: "production").
-	 * In an production environment, `pak` avoids accidentally pulling in `devDependencies`.
-	 */
-	public environment: "production" | "development" = "production";
 
 	/** Resolves absolute paths of all workspaces defined in the current monorepo */
 	public async workspaces(): Promise<string[]> {
@@ -122,6 +111,31 @@ export abstract class PackageManager {
 		}
 		return [...ret].sort();
 	}
+
+	/** Creates an installable tarball of the current package or a monorepo sub-package. The result's `stdout` will contain the path where the tarball is created. */
+	public abstract pack(options?: PackOptions): Promise<CommandResult>;
+
+	/** The directory to run the package manager commands in */
+	public cwd: string = process.cwd();
+
+	/** Which loglevel to pass to the package manager */
+	public loglevel?: "info" | "verbose" | "warn" | "error" | "silent";
+
+	/** The (optional) stream to pipe the command's stdout into */
+	public stdout?: Writable;
+	/** The (optional) stream to pipe the command's stderr into */
+	public stderr?: Writable;
+	/**
+	 * The (optional) stream to pipe the command's entire output (stdout + stderr) into.
+	 * If this is set, stdout and stderr will be ignored
+	 */
+	public stdall?: Writable;
+
+	/**
+	 * The environment the package manager is executed in (default: "production").
+	 * In an production environment, `pak` avoids accidentally pulling in `devDependencies`.
+	 */
+	public environment: "production" | "development" = "production";
 }
 
 export interface InstallBaseOptions {
@@ -142,6 +156,16 @@ export interface InstallOptions extends InstallBaseOptions {
 
 export type UninstallOptions = InstallBaseOptions;
 export type UpdateOptions = InstallBaseOptions;
+
+export interface PackOptions {
+	/**
+	 * In monorepos, this determines which workspace to pack. Defaults to the current working directory.
+	 * This must be a path relative to the repo root.
+	 */
+	workspace?: string;
+	/** Where to save the packed tarball. Defaults to the current working directory */
+	targetDir?: string;
+}
 
 export interface CommandResult {
 	/** Whether the command execution was successful */

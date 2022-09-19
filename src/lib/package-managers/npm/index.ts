@@ -11,6 +11,7 @@ import {
 	UninstallOptions,
 	UpdateOptions,
 } from "../package-manager";
+import { lt } from "semver";
 
 const exactVersionRegex = /.+@\d+/;
 
@@ -420,6 +421,15 @@ export class Npm extends PackageManager {
 		targetDir = this.cwd,
 		workspace = ".",
 	}: PackOptions = {}): Promise<CommandResult> {
+		if (workspace !== ".") {
+			const npmVersion = await this.version();
+			if (lt(npmVersion, "7.0.0")) {
+				return this.fail(
+					`npm ${npmVersion} does not support monorepos`,
+				);
+			}
+		}
+
 		const workspaceDir = path.join(this.cwd, workspace);
 		// Make sure the target dir exists
 		await fs.ensureDir(targetDir);

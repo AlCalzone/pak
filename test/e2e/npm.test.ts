@@ -6,6 +6,7 @@ import rimraf from "rimraf";
 import fs from "fs-extra";
 import { promisify } from "util";
 import { packageManagers } from "../../src/index";
+import semver from "semver";
 
 describe("End to end tests - npm", () => {
 	let testDir: string;
@@ -156,6 +157,8 @@ describe("End to end tests - npm", () => {
 		const result = await npm.pack({
 			targetDir: path.join(testDir, "foo/bar"),
 		});
+		console.log(result.stdall);
+
 		expect(result.stdout).toBe(
 			path.join(testDir, "foo/bar/test-0.0.1.tgz"),
 		);
@@ -174,6 +177,7 @@ describe("End to end tests - npm", () => {
 		npm.cwd = testDir;
 
 		const result = await npm.pack();
+		console.log(result.stdall);
 		expect(result.stdout).toBe(
 			path.join(testDir, "scope-test-0.0.1-beta.0+1234.tgz"),
 		);
@@ -205,20 +209,26 @@ describe("End to end tests - npm", () => {
 		const npm = new packageManagers.npm();
 		npm.cwd = testDir;
 
-		let result = await npm.pack({
+		const resultPromise = npm.pack({
 			workspace: "packages/package-a",
 		});
-		expect(result.stdout).toBe(
-			path.join(testDir, "test-package-a-0.0.1.tgz"),
-		);
-		expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+		if (semver.gte(await npm.version(), "7.0.0")) {
+			let result = await resultPromise;
+			expect(result.stdout).toBe(
+				path.join(testDir, "test-package-a-0.0.1.tgz"),
+			);
+			expect(fs.pathExists(result.stdout)).resolves.toBe(true);
 
-		result = await npm.pack({
-			workspace: "packages/package-b",
-		});
-		expect(result.stdout).toBe(
-			path.join(testDir, "test-package-b-0.0.2.tgz"),
-		);
-		expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+			result = await npm.pack({
+				workspace: "packages/package-b",
+			});
+			expect(result.stdout).toBe(
+				path.join(testDir, "test-package-b-0.0.2.tgz"),
+			);
+			expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+		} else {
+			// npm 6 will fail
+			await expect(resultPromise).rejects.toThrow(/does not support/);
+		}
 	}, 60000);
 });

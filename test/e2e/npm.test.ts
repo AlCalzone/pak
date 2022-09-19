@@ -209,11 +209,10 @@ describe("End to end tests - npm", () => {
 		const npm = new packageManagers.npm();
 		npm.cwd = testDir;
 
-		const resultPromise = npm.pack({
+		let result = await npm.pack({
 			workspace: "packages/package-a",
 		});
 		if (semver.gte(await npm.version(), "7.0.0")) {
-			let result = await resultPromise;
 			expect(result.stdout).toBe(
 				path.join(testDir, "test-package-a-0.0.1.tgz"),
 			);
@@ -228,7 +227,8 @@ describe("End to end tests - npm", () => {
 			expect(fs.pathExists(result.stdout)).resolves.toBe(true);
 		} else {
 			// npm 6 will fail
-			await expect(resultPromise).rejects.toThrow(/does not support/);
+			expect(result.success).toBe(false);
+			expect(result.stderr).toMatch(/does not support/);
 		}
 	}, 60000);
 });

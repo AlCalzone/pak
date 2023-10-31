@@ -4,7 +4,7 @@
 	## __WORK IN PROGRESS__
 -->
 ## __WORK IN PROGRESS__
-* Allowed to use the force flag by installations
+* Add the install option `force` to pass the `--force` flag to the package manager. The specific behavior depends on the package manager in use.
 
 ## 0.9.0 (2022-09-19)
 * Add support for enumerating workspaces in a monorepo

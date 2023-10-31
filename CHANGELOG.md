@@ -5,6 +5,7 @@
 -->
 ## __WORK IN PROGRESS__
 * Add the install option `force` to pass the `--force` flag to the package manager. The specific behavior depends on the package manager in use.
+* `npm.overrideDependencies` now supports `lockfileVersion: 3`
 
 ## 0.9.0 (2022-09-19)
 * Add support for enumerating workspaces in a monorepo

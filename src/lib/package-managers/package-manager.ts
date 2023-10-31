@@ -152,6 +152,16 @@ export interface InstallOptions extends InstallBaseOptions {
 	exact?: boolean;
 	/** Prevent execution of pre/post/install scripts. Default: false (execute scripts) */
 	ignoreScripts?: boolean;
+	/**
+	 * Enable the `force` flag. Depending on the package manager and whether package names
+	 * are passed, this may do one or more of the following things:
+	 * * Force-fetch remote packages even if a local copy exists on disk
+	 * * Ignore peer dependency errors occur
+	 * * Do nothing
+	 *
+	 * Default: `false`
+	 */
+	force?: boolean;
 }
 
 export type UninstallOptions = InstallBaseOptions;

@@ -131,7 +131,7 @@ function walkLockfileV1(
 	}
 }
 
-function walkLockfileV2(
+function walkLockfileV2V3(
 	root: Record<string, any>,
 	dir: string,
 	overrides: Record<string, ResolvedDependency>,
@@ -207,6 +207,7 @@ export class Npm extends PackageManager {
 			args.push("--save-exact");
 		}
 		if (options.global) args.push("--global");
+		if (options.force) args.push("--force");
 		if (this.loglevel) {
 			args.push("--loglevel", this.loglevel);
 		}
@@ -333,7 +334,8 @@ export class Npm extends PackageManager {
 
 		if (
 			rootPackageLock.lockfileVersion !== 1 &&
-			rootPackageLock.lockfileVersion !== 2
+			rootPackageLock.lockfileVersion !== 2 &&
+			rootPackageLock.lockfileVersion !== 3
 		) {
 			return fail(
 				`Lockfile version ${rootPackageLock.lockfileVersion} is not supported!`,
@@ -353,8 +355,11 @@ export class Npm extends PackageManager {
 		// Walk through the lockfile, edit it and find the package.jsons we need to update
 		const affectedPackageJsons = new Set<string>();
 		affectedPackageJsons.add(rootPackageJsonPath);
-		if (rootPackageLock.lockfileVersion === 2) {
-			walkLockfileV2(
+		if (
+			rootPackageLock.lockfileVersion === 2 ||
+			rootPackageLock.lockfileVersion === 3
+		) {
+			walkLockfileV2V3(
 				rootPackageLock,
 				root,
 				overrides,

@@ -207,6 +207,7 @@ export class Npm extends PackageManager {
 			args.push("--save-exact");
 		}
 		if (options.global) args.push("--global");
+		if (options.force) args.push("--force");
 		if (this.loglevel) {
 			args.push("--loglevel", this.loglevel);
 		}

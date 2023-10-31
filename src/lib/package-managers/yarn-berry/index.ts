@@ -65,6 +65,9 @@ export class YarnBerry extends PackageManager {
 			if (options.exact) {
 				args.push("--exact");
 			}
+			if (options.force) {
+				args.push("--force");
+			}
 		} else {
 			args.push("install");
 			// if (this.environment === "production") {

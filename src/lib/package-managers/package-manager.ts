@@ -152,6 +152,8 @@ export interface InstallOptions extends InstallBaseOptions {
 	exact?: boolean;
 	/** Prevent execution of pre/post/install scripts. Default: false (execute scripts) */
 	ignoreScripts?: boolean;
+	/** Argument will force npm to fetch remote resources even if a local copy exists on disk or some peer dependencies errors occur. */
+	force?: boolean;
 }
 
 export type UninstallOptions = InstallBaseOptions;

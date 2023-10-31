@@ -3,6 +3,9 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## __WORK IN PROGRESS__
+* Allowed to use the force flag by installations
+
 ## 0.9.0 (2022-09-19)
 * Add support for enumerating workspaces in a monorepo
 * Add support for packing a package into an installable tarball (npm and Yarn Berry only)

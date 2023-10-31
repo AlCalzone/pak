@@ -157,7 +157,7 @@ describe("End to end tests - npm", () => {
 		const result = await npm.pack({
 			targetDir: path.join(testDir, "foo/bar"),
 		});
-		console.log(result.stdall);
+		// console.log(result.stdall);
 
 		expect(result.stdout).toBe(
 			path.join(testDir, "foo/bar/test-0.0.1.tgz"),
@@ -177,7 +177,7 @@ describe("End to end tests - npm", () => {
 		npm.cwd = testDir;
 
 		const result = await npm.pack();
-		console.log(result.stdall);
+		// console.log(result.stdall);
 		expect(result.stdout).toBe(
 			path.join(testDir, "scope-test-0.0.1-beta.0+1234.tgz"),
 		);

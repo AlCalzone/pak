@@ -3,6 +3,9 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## 0.10.1 (2023-11-29)
+* Upgraded dependencies to fix a vulnerability in `axios`
+
 ## 0.10.0 (2023-10-31)
 * Add the install option `force` to pass the `--force` flag to the package manager. The specific behavior depends on the package manager in use.
 * `npm.overrideDependencies` now supports `lockfileVersion: 3`

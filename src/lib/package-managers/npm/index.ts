@@ -172,11 +172,15 @@ export class Npm extends PackageManager {
 		args: string[],
 		options: execa.Options<string> = {},
 	): Promise<CommandResult> {
+		const isWindows = process.platform === "win32";
 		const promise = execa("npm", args, {
 			...options,
 			cwd: this.cwd,
 			reject: false,
 			all: true,
+			// Windows needs shell to be true to execute npm
+			// https://github.com/nodejs/node/releases/tag/v18.20.2
+			shell: isWindows,
 		});
 
 		// Pipe command outputs if desired

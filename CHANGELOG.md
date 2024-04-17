@@ -3,6 +3,9 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## __WORK IN PROGRESS__
+* Fix: use `shell: true` option for `npm` on Windows to prevent stalling
+
 ## 0.10.1 (2023-11-29)
 * Upgraded dependencies to fix a vulnerability in `axios`
 

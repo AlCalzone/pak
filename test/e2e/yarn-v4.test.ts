@@ -14,16 +14,16 @@ import rimraf from "rimraf";
 import { promisify } from "util";
 import { packageManagers } from "../../src/index";
 
-describe("End to end tests - yarn berry", () => {
+describe("End to end tests - yarn v4", () => {
 	let testDir: string;
 
 	beforeEach(async () => {
 		// Create test directory
-		testDir = path.join(os.tmpdir(), "pak-test-yarn-berry");
+		testDir = path.join(os.tmpdir(), "pak-test-yarn-v4");
 		await promisify(rimraf)(testDir);
 		await ensureDir(testDir);
-		// Upgrade it to yarn v3
-		const templatesDir = path.join(__dirname, ".yarn-berry");
+		// Upgrade it to yarn v4
+		const templatesDir = path.join(__dirname, ".yarn-v4");
 		for (const file of await readdir(templatesDir)) {
 			const source = path.join(templatesDir, file);
 			const target = path.join(testDir, file);
@@ -42,7 +42,7 @@ describe("End to end tests - yarn berry", () => {
 	it("is actually using yarn berry", async () => {
 		const yarn = new packageManagers.yarn();
 		yarn.cwd = testDir;
-		await expect(yarn.version()).resolves.toBe("3.2.3");
+		await expect(yarn.version()).resolves.toBe("4.3.0");
 	}, 60000);
 
 	it("installs und uninstalls correctly", async () => {

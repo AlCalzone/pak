@@ -3,7 +3,7 @@
 !.vscode/
 !.github/
 !.yarn/
-!test/**/.yarn
+!test/**/.yarn-*
 node_modules
 nbproject
 

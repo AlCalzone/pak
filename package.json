@@ -15,7 +15,7 @@
   "license": "MIT",
   "scripts": {
     "test:reset": "jest --clear-cache",
-    "test:ts": "jest --passWithNoTests",
+    "test:ts": "jest",
     "test:ci": "yarn run test:ts --runInBand",
     "test:watch": "yarn run test:ts --watch",
     "test": "yarn run test:watch",

@@ -263,4 +263,6 @@ if (nodeVersion && nodeVersion >= 18) {
 			expect(pathExists(result.stdout)).resolves.toBe(true);
 		}, 60000);
 	});
+} else {
+	it.todo("Yarn v4 tests are skipped because Node 18+ is required");
 }

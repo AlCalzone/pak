@@ -1,6 +1,6 @@
 {
   "name": "@alcalzone/pak",
-  "version": "0.10.2",
+  "version": "0.11.0",
   "description": "Programmatic wrapper around popular Node.js package managers",
   "main": "build/index.js",
   "types": "build/index.d.ts",

@@ -3,6 +3,9 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
+## 0.11.0 (2024-06-21)
+* Add support for Yarn v4
+
 ## 0.10.2 (2024-04-17)
 * Fix: use `shell: true` option for `npm` on Windows to prevent stalling
 

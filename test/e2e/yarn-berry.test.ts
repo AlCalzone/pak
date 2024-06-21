@@ -2,11 +2,11 @@ import execa from "execa";
 import {
 	copy,
 	createFile,
-	emptyDir,
 	ensureDir,
 	readJson,
 	writeJson,
 	pathExists,
+	readdir,
 } from "fs-extra";
 import os from "os";
 import path from "path";
@@ -23,11 +23,11 @@ describe("End to end tests - yarn berry", () => {
 		await promisify(rimraf)(testDir);
 		await ensureDir(testDir);
 		// Upgrade it to yarn v3
-		for (const file of [".yarnrc.yml", ".yarn/releases/yarn-3.2.3.cjs"]) {
-			const source = path.join(__dirname, file);
+		const templatesDir = path.join(__dirname, ".yarn-berry");
+		for (const file of await readdir(templatesDir)) {
+			const source = path.join(templatesDir, file);
 			const target = path.join(testDir, file);
-			await emptyDir(path.dirname(target));
-			await copy(source, target);
+			await copy(source, target, { recursive: true });
 		}
 		// Create empty yarn.lock, or it will look further up the tree
 		await createFile(path.join(testDir, "yarn.lock"));

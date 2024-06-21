@@ -128,7 +128,11 @@ export class YarnBerry extends PackageManager {
 			);
 			// Check if yarn is version 1
 			const version = await this.version();
-			if (!version.startsWith("2.") && !version.startsWith("3.")) {
+			if (
+				!version.startsWith("2.") &&
+				!version.startsWith("3.") &&
+				!version.startsWith("4.")
+			) {
 				return false;
 			}
 

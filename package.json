@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@alcalzone/esm2cjs": "^1.4.2",
-    "@alcalzone/release-script": "^5.0.0",
+    "@alcalzone/release-script": "^5.1.1",
     "@eslint/js": "^10.0.1",
     "@tsconfig/node20": "^20.1.9",
     "@types/node": "^20.19.33",

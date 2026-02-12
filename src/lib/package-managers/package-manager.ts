@@ -1,9 +1,17 @@
 import glob from "tiny-glob";
 import spawn, { type Options } from "nano-spawn";
-import { pathExists } from "fs-extra";
-import * as fs from "fs-extra";
+import * as fs from "node:fs/promises";
 import path from "path";
 import type { Writable } from "stream";
+
+async function fileExists(filePath: string): Promise<boolean> {
+	try {
+		await fs.access(filePath);
+		return true;
+	} catch {
+		return false;
+	}
+}
 
 export abstract class PackageManager {
 	/**
@@ -100,10 +108,10 @@ export abstract class PackageManager {
 		let parentDir: string;
 		while (true) {
 			const packageJsonPath = path.join(curDir, "package.json");
-			if (await pathExists(packageJsonPath)) {
+			if (await fileExists(packageJsonPath)) {
 				if (!lockfile) return curDir;
 				const lockfilePath = path.join(curDir, lockfile);
-				if (await pathExists(lockfilePath)) return curDir;
+				if (await fileExists(lockfilePath)) return curDir;
 			}
 
 			parentDir = path.dirname(curDir);
@@ -127,9 +135,9 @@ export abstract class PackageManager {
 	/** Resolves absolute paths of all workspaces defined in the current monorepo */
 	public async workspaces(): Promise<string[]> {
 		const packageJsonPath = path.join(this.cwd, "package.json");
-		const packageJson = await fs.readJson(packageJsonPath, {
-			encoding: "utf8",
-		});
+		const packageJson = JSON.parse(
+			await fs.readFile(packageJsonPath, "utf8"),
+		);
 		const workspaces = packageJson.workspaces;
 		if (!workspaces?.length) return [];
 

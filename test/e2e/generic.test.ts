@@ -1,4 +1,4 @@
-import { ensureDir, writeJson } from "fs-extra";
+import * as fs from "node:fs/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import os from "os";
 import path from "path";
@@ -12,7 +12,7 @@ describe("End to end tests - generic pak features", () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-generic");
 		await rimraf(testDir);
-		await ensureDir(testDir);
+		await fs.mkdir(testDir, { recursive: true });
 	});
 
 	afterEach(async () => {
@@ -25,7 +25,7 @@ describe("End to end tests - generic pak features", () => {
 			version: "0.0.1",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const npm = new packageManagers.npm();
 		npm.cwd = testDir;
@@ -41,20 +41,20 @@ describe("End to end tests - generic pak features", () => {
 			workspaces: ["packages/*", "does-not-exist"],
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		// Create directories for the workspaces
-		await ensureDir(path.join(testDir, "packages", "package-a"));
-		await ensureDir(path.join(testDir, "packages", "package-b"));
-		await ensureDir(path.join(testDir, "packages", "package-c"));
+		await fs.mkdir(path.join(testDir, "packages", "package-a"), { recursive: true });
+		await fs.mkdir(path.join(testDir, "packages", "package-b"), { recursive: true });
+		await fs.mkdir(path.join(testDir, "packages", "package-c"), { recursive: true });
 		// Create package.json in workspace dirs
-		await writeJson(
+		await fs.writeFile(
 			path.join(testDir, "packages", "package-a", "package.json"),
-			{},
+			JSON.stringify({}),
 		);
-		await writeJson(
+		await fs.writeFile(
 			path.join(testDir, "packages", "package-b", "package.json"),
-			{},
+			JSON.stringify({}),
 		);
 		// No package.json in package-c -> no workspace
 

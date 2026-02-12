@@ -1,10 +1,9 @@
 import spawn from "nano-spawn";
-import { ensureDir, readJson, writeJson } from "fs-extra";
+import * as fs from "node:fs/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import os from "os";
 import path from "path";
 import { rimraf } from "rimraf";
-import fs from "fs-extra";
 import { packageManagers } from "../../src/index.js";
 import semver from "semver";
 
@@ -15,7 +14,7 @@ describe("End to end tests - npm", () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-npm");
 		await rimraf(testDir);
-		await ensureDir(testDir);
+		await fs.mkdir(testDir, { recursive: true });
 	});
 
 	afterEach(async () => {
@@ -28,7 +27,7 @@ describe("End to end tests - npm", () => {
 			version: "0.0.1",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const npm = new packageManagers.npm();
 		npm.cwd = testDir;
@@ -40,13 +39,13 @@ describe("End to end tests - npm", () => {
 		// Now that something is installed, there should be a package-lock.json
 		await expect(npm.findRoot("package-lock.json")).resolves.toBe(testDir);
 
-		packageJson = await readJson(packageJsonPath);
+		packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
 		expect(packageJson.dependencies["is-even"]).toBe("0.1.0");
 		expect(packageJson.devDependencies["is-odd"]).toBe("3.0.0");
 
 		await npm.uninstall(["is-even"]);
 		await npm.uninstall(["is-odd"], { dependencyType: "dev" });
-		packageJson = await readJson(packageJsonPath);
+		packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
 
 		expect(packageJson.dependencies ?? {}).not.toHaveProperty("is-even");
 		expect(packageJson.devDependencies ?? {}).not.toHaveProperty("is-odd");
@@ -58,7 +57,7 @@ describe("End to end tests - npm", () => {
 			version: "0.0.1",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const npm = new packageManagers.npm();
 		npm.cwd = testDir;
@@ -91,7 +90,7 @@ describe("End to end tests - npm", () => {
 			},
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const npm = new packageManagers.npm();
 		npm.cwd = testDir;
@@ -115,7 +114,7 @@ describe("End to end tests - npm", () => {
 			version: "0.0.1",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const npm = new packageManagers.npm();
 		npm.cwd = testDir;
@@ -128,7 +127,7 @@ describe("End to end tests - npm", () => {
 		expect(result.stdout).toBe(
 			path.join(testDir, "foo/bar/test-0.0.1.tgz"),
 		);
-		await expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+		await expect(fs.access(result.stdout)).resolves.toBeUndefined();
 	}, 60000);
 
 	it("packs scoped non-monorepo projects correctly", async () => {
@@ -137,7 +136,7 @@ describe("End to end tests - npm", () => {
 			version: "0.0.1-beta.0+1234",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const npm = new packageManagers.npm();
 		npm.cwd = testDir;
@@ -147,7 +146,7 @@ describe("End to end tests - npm", () => {
 		expect(result.stdout).toBe(
 			path.join(testDir, "scope-test-0.0.1-beta.0+1234.tgz"),
 		);
-		await expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+		await expect(fs.access(result.stdout)).resolves.toBeUndefined();
 	}, 60000);
 
 	it("packs monorepo workspaces correctly", async () => {
@@ -157,19 +156,19 @@ describe("End to end tests - npm", () => {
 			workspaces: ["packages/*"],
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		// Create directories for the workspaces
-		await ensureDir(path.join(testDir, "packages", "package-a"));
-		await ensureDir(path.join(testDir, "packages", "package-b"));
+		await fs.mkdir(path.join(testDir, "packages", "package-a"), { recursive: true });
+		await fs.mkdir(path.join(testDir, "packages", "package-b"), { recursive: true });
 		// Create package.json in workspace dirs
-		await writeJson(
+		await fs.writeFile(
 			path.join(testDir, "packages", "package-a", "package.json"),
-			{ name: "@test/package-a", version: "0.0.1" },
+			JSON.stringify({ name: "@test/package-a", version: "0.0.1" }),
 		);
-		await writeJson(
+		await fs.writeFile(
 			path.join(testDir, "packages", "package-b", "package.json"),
-			{ name: "@test/package-b", version: "0.0.2" },
+			JSON.stringify({ name: "@test/package-b", version: "0.0.2" }),
 		);
 
 		const npm = new packageManagers.npm();
@@ -182,7 +181,7 @@ describe("End to end tests - npm", () => {
 			expect(result.stdout).toBe(
 				path.join(testDir, "test-package-a-0.0.1.tgz"),
 			);
-			await expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+			await expect(fs.access(result.stdout)).resolves.toBeUndefined();
 
 			result = await npm.pack({
 				workspace: "packages/package-b",
@@ -190,7 +189,7 @@ describe("End to end tests - npm", () => {
 			expect(result.stdout).toBe(
 				path.join(testDir, "test-package-b-0.0.2.tgz"),
 			);
-			await expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+			await expect(fs.access(result.stdout)).resolves.toBeUndefined();
 		} else {
 			// npm 6 will fail
 			expect(result.success).toBe(false);

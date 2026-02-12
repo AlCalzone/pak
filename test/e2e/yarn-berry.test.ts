@@ -1,14 +1,6 @@
 import spawn from "nano-spawn";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-	copy,
-	createFile,
-	ensureDir,
-	readJson,
-	writeJson,
-	pathExists,
-	readdir,
-} from "fs-extra";
+import * as fs from "node:fs/promises";
 import os from "os";
 import path from "path";
 import { rimraf } from "rimraf";
@@ -21,16 +13,16 @@ describe("End to end tests - yarn berry", () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-yarn-berry");
 		await rimraf(testDir);
-		await ensureDir(testDir);
+		await fs.mkdir(testDir, { recursive: true });
 		// Upgrade it to yarn v3
 		const templatesDir = path.join(__dirname, ".yarn-berry");
-		for (const file of await readdir(templatesDir)) {
+		for (const file of await fs.readdir(templatesDir)) {
 			const source = path.join(templatesDir, file);
 			const target = path.join(testDir, file);
-			await copy(source, target, { recursive: true });
+			await fs.cp(source, target, { recursive: true });
 		}
 		// Create empty yarn.lock, or it will look further up the tree
-		await createFile(path.join(testDir, "yarn.lock"));
+		await fs.writeFile(path.join(testDir, "yarn.lock"), "");
 		// Keep yarn from failing when changing the lockfile
 		process.env.YARN_ENABLE_IMMUTABLE_INSTALLS = "0";
 	});
@@ -51,7 +43,7 @@ describe("End to end tests - yarn berry", () => {
 			version: "0.0.1",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const yarn = new packageManagers.yarn();
 		yarn.cwd = testDir;
@@ -63,17 +55,17 @@ describe("End to end tests - yarn berry", () => {
 		// Now that something is installed, there should be a yarn.lock
 		await expect(yarn.findRoot("yarn.lock")).resolves.toBe(testDir);
 
-		packageJson = await readJson(packageJsonPath);
+		packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
 		expect(packageJson.dependencies["is-even"]).toBe("0.1.0");
 		expect(packageJson.devDependencies["is-odd"]).toBe("^3.0.0");
 
 		await yarn.update(["is-odd"]); // there's at least a 3.0.1 to update to
-		packageJson = await readJson(packageJsonPath);
+		packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
 		expect(packageJson.devDependencies["is-odd"]).not.toBe("^3.0.0");
 
 		await yarn.uninstall(["is-even"]);
 		await yarn.uninstall(["is-odd"], { dependencyType: "dev" });
-		packageJson = await readJson(packageJsonPath);
+		packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
 
 		expect(packageJson.dependencies ?? {}).not.toHaveProperty("is-even");
 		expect(packageJson.devDependencies ?? {}).not.toHaveProperty("is-odd");
@@ -85,7 +77,7 @@ describe("End to end tests - yarn berry", () => {
 			version: "0.0.1",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const yarn = new packageManagers.yarn();
 		yarn.loglevel = "verbose";
@@ -122,7 +114,7 @@ describe("End to end tests - yarn berry", () => {
 			},
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const yarn = new packageManagers.yarn();
 		yarn.cwd = testDir;
@@ -146,7 +138,7 @@ describe("End to end tests - yarn berry", () => {
 			version: "0.0.1",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const yarn = new packageManagers.yarn();
 		yarn.cwd = testDir;
@@ -157,7 +149,7 @@ describe("End to end tests - yarn berry", () => {
 		expect(result.stdout).toBe(
 			path.join(testDir, "foo/bar/test-0.0.1.tgz"),
 		);
-		await expect(pathExists(result.stdout)).resolves.toBe(true);
+		await expect(fs.access(result.stdout)).resolves.toBeUndefined();
 	}, 60000);
 
 	it("packs scoped non-monorepo projects correctly", async () => {
@@ -166,7 +158,7 @@ describe("End to end tests - yarn berry", () => {
 			version: "0.0.1-beta.0+1234",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const yarn = new packageManagers.yarn();
 		yarn.cwd = testDir;
@@ -175,7 +167,7 @@ describe("End to end tests - yarn berry", () => {
 		expect(result.stdout).toBe(
 			path.join(testDir, "scope-test-0.0.1-beta.0+1234.tgz"),
 		);
-		await expect(pathExists(result.stdout)).resolves.toBe(true);
+		await expect(fs.access(result.stdout)).resolves.toBeUndefined();
 	}, 60000);
 
 	it("packs monorepo workspaces correctly", async () => {
@@ -185,19 +177,19 @@ describe("End to end tests - yarn berry", () => {
 			workspaces: ["packages/*"],
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		// Create directories for the workspaces
-		await ensureDir(path.join(testDir, "packages", "package-a"));
-		await ensureDir(path.join(testDir, "packages", "package-b"));
+		await fs.mkdir(path.join(testDir, "packages", "package-a"), { recursive: true });
+		await fs.mkdir(path.join(testDir, "packages", "package-b"), { recursive: true });
 		// Create package.json in workspace dirs
-		await writeJson(
+		await fs.writeFile(
 			path.join(testDir, "packages", "package-a", "package.json"),
-			{ name: "@test/package-a", version: "0.0.1" },
+			JSON.stringify({ name: "@test/package-a", version: "0.0.1" }),
 		);
-		await writeJson(
+		await fs.writeFile(
 			path.join(testDir, "packages", "package-b", "package.json"),
-			{ name: "@test/package-b", version: "0.0.2" },
+			JSON.stringify({ name: "@test/package-b", version: "0.0.2" }),
 		);
 
 		const yarn = new packageManagers.yarn();
@@ -209,7 +201,7 @@ describe("End to end tests - yarn berry", () => {
 		expect(result.stdout).toBe(
 			path.join(testDir, "test-package-a-0.0.1.tgz"),
 		);
-		await expect(pathExists(result.stdout)).resolves.toBe(true);
+		await expect(fs.access(result.stdout)).resolves.toBeUndefined();
 
 		result = await yarn.pack({
 			workspace: "packages/package-b",
@@ -217,6 +209,6 @@ describe("End to end tests - yarn berry", () => {
 		expect(result.stdout).toBe(
 			path.join(testDir, "test-package-b-0.0.2.tgz"),
 		);
-		await expect(pathExists(result.stdout)).resolves.toBe(true);
+		await expect(fs.access(result.stdout)).resolves.toBeUndefined();
 	}, 60000);
 });

@@ -1,4 +1,4 @@
-import * as fs from "fs-extra";
+import * as fs from "node:fs/promises";
 import * as path from "path";
 import {
 	CommandResult,
@@ -136,9 +136,9 @@ export class YarnBerry extends PackageManager {
 		try {
 			root = await this.findRoot("yarn.lock");
 			const packageJsonPath = path.join(root, "package.json");
-			const packageJson = await fs.readJson(packageJsonPath, {
-				encoding: "utf8",
-			});
+			const packageJson = JSON.parse(
+				await fs.readFile(packageJsonPath, "utf8"),
+			);
 			// Add the dependencies to "resolutions" and let yarn figure it out
 			let resolutions = packageJson.resolutions ?? {};
 			resolutions = {
@@ -146,10 +146,11 @@ export class YarnBerry extends PackageManager {
 				...dependencies,
 			};
 			packageJson.resolutions = resolutions;
-			await fs.writeJson(packageJsonPath, packageJson, {
-				spaces: 2,
-				encoding: "utf8",
-			});
+			await fs.writeFile(
+				packageJsonPath,
+				JSON.stringify(packageJson, null, 2) + "\n",
+				"utf8",
+			);
 		} catch (e: any) {
 			const stderr = "Error updating root package.json: " + e.message;
 			return {
@@ -177,11 +178,13 @@ export class YarnBerry extends PackageManager {
 	}: PackOptions = {}): Promise<CommandResult> {
 		const workspaceDir = path.join(this.cwd, workspace);
 		// Make sure the target dir exists
-		await fs.ensureDir(targetDir);
+		await fs.mkdir(targetDir, { recursive: true });
 
 		// Yarn expects the path to the file to be generated, unlike npm. So we need to determine it ourselves.
 		const packageJsonPath = path.join(workspaceDir, "package.json");
-		const packageJson = await fs.readJson(packageJsonPath, "utf8");
+		const packageJson = JSON.parse(
+			await fs.readFile(packageJsonPath, "utf8"),
+		);
 		const packageName = packageJson.name
 			.replace("/", "-")
 			.replace(/^@/, "");

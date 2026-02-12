@@ -3,7 +3,7 @@
 	Placeholder for the next version (at the beginning of the line):
 	## __WORK IN PROGRESS__
 -->
-## __WORK IN PROGRESS__
+## 0.12.0 (2026-02-12)
 * Breaking: Minimum supported Node.js version is now 20
 * The package is now published as a hybrid ESM/CJS package
 * Updated, removed and modernized several dependencies

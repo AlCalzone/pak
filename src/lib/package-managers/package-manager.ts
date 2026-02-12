@@ -1,5 +1,5 @@
 import glob from "tiny-glob";
-import type { ExecaReturnValue } from "execa";
+import spawn, { type Options } from "nano-spawn";
 import { pathExists } from "fs-extra";
 import * as fs from "fs-extra";
 import path from "path";
@@ -39,6 +39,49 @@ export abstract class PackageManager {
 
 	/** Returns the active version of the package manager */
 	public abstract version(): Promise<string>;
+
+	/** Executes a command and translates the result into a CommandResult */
+	protected async exec(
+		file: string,
+		args: string[],
+		options: Options = {},
+	): Promise<CommandResult> {
+		const subprocess = spawn(file, args, {
+			...options,
+			cwd: this.cwd,
+		});
+
+		const childProcess = await subprocess.nodeChildProcess;
+		// Pipe command outputs if desired
+		if (this.stdout) childProcess.stdout?.pipe(this.stdout, { end: false });
+		if (this.stderr) childProcess.stderr?.pipe(this.stderr, { end: false });
+		if (this.stdall) {
+			childProcess.stdout?.pipe(this.stdall, { end: false });
+			childProcess.stderr?.pipe(this.stdall, { end: false });
+		}
+
+		try {
+			const result = await subprocess;
+			return {
+				success: true,
+				exitCode: 0,
+				stdout: result.stdout,
+				stderr: result.stderr,
+				stdall: result.output,
+			};
+		} catch (error: any) {
+			return {
+				success: false,
+				exitCode: error.exitCode ?? 1,
+				stdout: error.stdout ?? "",
+				stderr: error.stderr ?? "",
+				stdall: error.output ?? "",
+			};
+		} finally {
+			childProcess.stdout?.unpipe();
+			childProcess.stderr?.unpipe();
+		}
+	}
 
 	protected fail(message: string): Promise<CommandResult> {
 		const stderr = message;
@@ -188,20 +231,4 @@ export interface CommandResult {
 	stderr: string;
 	/** The captured stdout and stderr, interleaved like it would appear on the console */
 	stdall: string;
-}
-
-export function execaReturnValueToCommandResult(
-	result: ExecaReturnValue,
-): CommandResult {
-	return {
-		success:
-			!result.failed &&
-			!result.isCanceled &&
-			!result.killed &&
-			!result.timedOut,
-		exitCode: result.exitCode,
-		stdout: result.stdout,
-		stderr: result.stderr,
-		stdall: result.all!,
-	};
 }

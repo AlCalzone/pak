@@ -1,4 +1,4 @@
-import execa from "execa";
+import spawn from "nano-spawn";
 import fsExtra from "fs-extra";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { Npm } from "./index.js";
@@ -6,29 +6,46 @@ import { Npm } from "./index.js";
 vi.mock("fs-extra");
 const pathExistsMock = fsExtra.pathExists as Mock;
 
-vi.mock("execa");
-const execaMock = execa as any as Mock;
+vi.mock("nano-spawn");
+const spawnMock = spawn as any as Mock;
 
-const return_ok: execa.ExecaReturnValue<string> = {
-	command: "foobar",
-	exitCode: 0,
-	stderr: "",
+interface MockResult {
+	stdout: string;
+	stderr: string;
+	output: string;
+}
+
+interface MockError extends MockResult {
+	exitCode: number;
+}
+
+function mockSubprocess(result: MockResult) {
+	spawnMock.mockImplementation(() =>
+		Object.assign(Promise.resolve(result), { nodeChildProcess: {} }),
+	);
+}
+
+function mockSubprocessError(error: MockError) {
+	spawnMock.mockImplementation(() => {
+		const p = Promise.reject(
+			Object.assign(new Error("Command failed"), error),
+		) as any;
+		p.nodeChildProcess = {};
+		return p;
+	});
+}
+
+const return_ok: MockResult = {
 	stdout: "ok",
-	isCanceled: false,
-	failed: false,
-	timedOut: false,
-	killed: false,
+	stderr: "",
+	output: "ok",
 };
 
-const return_nok: execa.ExecaReturnValue<string> = {
-	command: "foobar",
+const return_nok: MockError = {
 	exitCode: 1,
-	stderr: "error",
 	stdout: "not ok",
-	isCanceled: false,
-	failed: true,
-	timedOut: false,
-	killed: false,
+	stderr: "error",
+	output: "not ok\nerror",
 };
 
 describe("npm.install()", () => {
@@ -36,21 +53,21 @@ describe("npm.install()", () => {
 
 	beforeEach(() => {
 		npm = new Npm();
-		execaMock.mockReset();
+		spawnMock.mockReset();
 	});
 
 	it("executes the correct command", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.install(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual(["install", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual(["install", "whatever"]);
 	});
 
 	it("handles multiple packages", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.install(["all", "these", "packages"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual([
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual([
 			"install",
 			"all",
 			"these",
@@ -59,96 +76,96 @@ describe("npm.install()", () => {
 	});
 
 	it("result.success is true when the command succeeds", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		const result = await npm.install(["whatever"]);
 		expect(result.success).toBe(true);
 	});
 
 	it("result.success is false when the command fails", async () => {
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		const result = await npm.install(["whatever"]);
 		expect(result.success).toBe(false);
 	});
 
 	it("result.exitCode contains the command exit code", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		let result = await npm.install(["whatever"]);
-		expect(result.exitCode).toBe(return_ok.exitCode);
+		expect(result.exitCode).toBe(0);
 
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		result = await npm.install(["whatever"]);
 		expect(result.exitCode).toBe(return_nok.exitCode);
 	});
 
 	it("defaults commands to the current cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.install(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({
 			cwd: process.cwd(),
 		});
 	});
 
 	it("respects the package manager's cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		npm.cwd = "/foo/bar";
 		await npm.install(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({ cwd: npm.cwd });
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({ cwd: npm.cwd });
 	});
 
 	it("respects the package manager's loglevel", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		npm.loglevel = "error";
 		await npm.install(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--loglevel", "error"]),
 		);
 	});
 
 	it("respects the dependency type", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.install(["whatever"], {
 			dependencyType: "dev",
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--save-dev"]),
 		);
 	});
 
 	it("respects the save option", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.install(["whatever"], {
 			exact: true,
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--save-exact"]),
 		);
 	});
 
 	it("defaults to --save-exact if a specific version is given", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.install(["whatever@1.2.3"]);
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--save-exact"]),
 		);
 	});
 
 	it("respects the global option", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.install(["whatever"], {
 			global: true,
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--global"]),
 		);
 	});
 
 	it("passes the additional args on", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.install(["whatever"], {
 			additionalArgs: ["--foo", "--bar"],
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--foo", "--bar"]),
 		);
 	});
@@ -159,21 +176,21 @@ describe("npm.uninstall()", () => {
 
 	beforeEach(() => {
 		npm = new Npm();
-		execaMock.mockReset();
+		spawnMock.mockReset();
 	});
 
 	it("executes the correct command", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.uninstall(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual(["uninstall", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual(["uninstall", "whatever"]);
 	});
 
 	it("handles multiple packages", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.uninstall(["all", "these", "packages"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual([
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual([
 			"uninstall",
 			"all",
 			"these",
@@ -182,78 +199,78 @@ describe("npm.uninstall()", () => {
 	});
 
 	it("result.success is true when the command succeeds", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		const result = await npm.uninstall(["whatever"]);
 		expect(result.success).toBe(true);
 	});
 
 	it("result.success is false when the command fails", async () => {
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		const result = await npm.uninstall(["whatever"]);
 		expect(result.success).toBe(false);
 	});
 
 	it("result.exitCode contains the command exit code", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		let result = await npm.uninstall(["whatever"]);
-		expect(result.exitCode).toBe(return_ok.exitCode);
+		expect(result.exitCode).toBe(0);
 
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		result = await npm.uninstall(["whatever"]);
 		expect(result.exitCode).toBe(return_nok.exitCode);
 	});
 
 	it("defaults commands to the current cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.uninstall(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({
 			cwd: process.cwd(),
 		});
 	});
 
 	it("respects the package manager's cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		npm.cwd = "/foo/bar";
 		await npm.uninstall(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({ cwd: npm.cwd });
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({ cwd: npm.cwd });
 	});
 
 	it("respects the package manager's loglevel", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		npm.loglevel = "error";
 		await npm.uninstall(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--loglevel", "error"]),
 		);
 	});
 
 	it("respects the dependency type", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.uninstall(["whatever"], {
 			dependencyType: "dev",
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--save-dev"]),
 		);
 	});
 
 	it("respects the global option", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.uninstall(["whatever"], {
 			global: true,
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--global"]),
 		);
 	});
 
 	it("passes the additional args on", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.uninstall(["whatever"], {
 			additionalArgs: ["--foo", "--bar"],
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--foo", "--bar"]),
 		);
 	});
@@ -264,21 +281,21 @@ describe("npm.update()", () => {
 
 	beforeEach(() => {
 		npm = new Npm();
-		execaMock.mockReset();
+		spawnMock.mockReset();
 	});
 
 	it("executes the correct command", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.update(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual(["update", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual(["update", "whatever"]);
 	});
 
 	it("handles multiple packages", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.update(["all", "these", "packages"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual([
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual([
 			"update",
 			"all",
 			"these",
@@ -287,68 +304,68 @@ describe("npm.update()", () => {
 	});
 
 	it("result.success is true when the command succeeds", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		const result = await npm.update(["whatever"]);
 		expect(result.success).toBe(true);
 	});
 
 	it("result.success is false when the command fails", async () => {
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		const result = await npm.update(["whatever"]);
 		expect(result.success).toBe(false);
 	});
 
 	it("result.exitCode contains the command exit code", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		let result = await npm.update(["whatever"]);
-		expect(result.exitCode).toBe(return_ok.exitCode);
+		expect(result.exitCode).toBe(0);
 
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		result = await npm.update(["whatever"]);
 		expect(result.exitCode).toBe(return_nok.exitCode);
 	});
 
 	it("defaults commands to the current cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.update(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({
 			cwd: process.cwd(),
 		});
 	});
 
 	it("respects the package manager's cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		npm.cwd = "/foo/bar";
 		await npm.update(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({ cwd: npm.cwd });
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({ cwd: npm.cwd });
 	});
 
 	it("respects the package manager's loglevel", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		npm.loglevel = "error";
 		await npm.update(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--loglevel", "error"]),
 		);
 	});
 
 	it("respects the dependency type", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.update(["whatever"], {
 			dependencyType: "dev",
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--save-dev"]),
 		);
 	});
 
 	it("respects the global option", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.update(["whatever"], {
 			global: true,
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["-g"]),
 		);
 	});
@@ -359,21 +376,21 @@ describe("npm.rebuild()", () => {
 
 	beforeEach(() => {
 		npm = new Npm();
-		execaMock.mockReset();
+		spawnMock.mockReset();
 	});
 
 	it("executes the correct command", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.rebuild(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual(["rebuild", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual(["rebuild", "whatever"]);
 	});
 
 	it("handles multiple packages", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.rebuild(["all", "these", "packages"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual([
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual([
 			"rebuild",
 			"all",
 			"these",
@@ -382,48 +399,48 @@ describe("npm.rebuild()", () => {
 	});
 
 	it("result.success is true when the command succeeds", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		const result = await npm.rebuild(["whatever"]);
 		expect(result.success).toBe(true);
 	});
 
 	it("result.success is false when the command fails", async () => {
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		const result = await npm.rebuild(["whatever"]);
 		expect(result.success).toBe(false);
 	});
 
 	it("result.exitCode contains the command exit code", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		let result = await npm.rebuild(["whatever"]);
-		expect(result.exitCode).toBe(return_ok.exitCode);
+		expect(result.exitCode).toBe(0);
 
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		result = await npm.rebuild(["whatever"]);
 		expect(result.exitCode).toBe(return_nok.exitCode);
 	});
 
 	it("defaults commands to the current cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await npm.rebuild(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({
 			cwd: process.cwd(),
 		});
 	});
 
 	it("respects the package manager's cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		npm.cwd = "/foo/bar";
 		await npm.rebuild(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({ cwd: npm.cwd });
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({ cwd: npm.cwd });
 	});
 
 	it("respects the package manager's loglevel", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		npm.loglevel = "error";
 		await npm.rebuild(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("npm");
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--loglevel", "error"]),
 		);
 	});

@@ -1,4 +1,4 @@
-import execa from "execa";
+import spawn from "nano-spawn";
 import { ensureDir, readJson, writeJson } from "fs-extra";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import os from "os";
@@ -66,14 +66,7 @@ describe("End to end tests - npm", () => {
 
 		// is-even@1.0.0 includes is-odd@^0.1.2, which also has newer versions (1.0.0+)
 		await npm.install(["is-even@1.0.0"]);
-		let version = await execa.command(
-			'node -p require("is-odd/package.json").version',
-			{
-				cwd: testDir,
-				reject: false,
-				encoding: "utf8",
-			},
-		);
+		let version = await spawn("node", ["-p", 'require("is-odd/package.json").version'], { cwd: testDir });
 		expect(version.stdout).toMatch(/^0\./);
 
 		const result = await npm.overrideDependencies({
@@ -81,26 +74,12 @@ describe("End to end tests - npm", () => {
 		});
 		expect(result.success).toBe(true);
 
-		debugger;
-
-		version = await execa.command(
-			'node -p require("is-odd/package.json").version',
-			{
-				cwd: testDir,
-				reject: false,
-				encoding: "utf8",
-			},
-		);
+		version = await spawn("node", ["-p", 'require("is-odd/package.json").version'], { cwd: testDir });
 		expect(version.stdout).toBe("1.0.0");
 
-		version = await execa.command(
-			'node -p require("is-odd/package.json").version',
-			{
-				cwd: path.join(testDir, "node_modules/is-even"),
-				reject: false,
-				encoding: "utf8",
-			},
-		);
+		version = await spawn("node", ["-p", 'require("is-odd/package.json").version'], {
+			cwd: path.join(testDir, "node_modules/is-even"),
+		});
 		expect(version.stdout).toBe("1.0.0");
 	}, 60000);
 
@@ -119,27 +98,14 @@ describe("End to end tests - npm", () => {
 		npm.cwd = testDir;
 
 		await npm.install([]);
-		let version = await execa.command(
-			'node -p require("is-odd/package.json").version',
-			{
-				cwd: testDir,
-				reject: false,
-				encoding: "utf8",
-			},
-		);
 		// not found!
-		expect(version.stdout).toBe("");
+		await expect(
+			spawn("node", ["-p", 'require("is-odd/package.json").version'], { cwd: testDir }),
+		).rejects.toThrow();
 
 		npm.environment = "development";
 		await npm.install([]);
-		version = await execa.command(
-			'node -p require("is-odd/package.json").version',
-			{
-				cwd: testDir,
-				reject: false,
-				encoding: "utf8",
-			},
-		);
+		const version = await spawn("node", ["-p", 'require("is-odd/package.json").version'], { cwd: testDir });
 		// now it is
 		expect(version.stdout).toBe("3.0.0");
 	}, 60000);

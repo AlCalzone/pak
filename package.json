@@ -55,9 +55,9 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "execa": "~5.0.1",
     "fs-extra": "^10.1.0",
     "ky": "^1.14.3",
+    "nano-spawn": "^0.2.0",
     "semver": "^7.7.4",
     "tiny-glob": "^0.2.9"
   },

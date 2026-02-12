@@ -35,7 +35,7 @@ __metadata:
     eslint-plugin-prettier: ^5.5.5
     fs-extra: ^10.1.0
     ky: ^1.14.3
-    nano-spawn: ^0.2.0
+    nano-spawn: ^2.0.0
     prettier: ^3.8.1
     prettier-plugin-organize-imports: ^4.3.0
     rimraf: ^3.0.2
@@ -2521,10 +2521,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nano-spawn@npm:^0.2.0":
-  version: 0.2.1
-  resolution: "nano-spawn@npm:0.2.1"
-  checksum: 334a160795c8a1007b87eebf643bb814542d6eed3136e242af751021f46564cbcb32964fe80150bd03904a06f1a1a50999b776141d01421081bfc0fb60da37e2
+"nano-spawn@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "nano-spawn@npm:2.0.0"
+  checksum: 48223f6f5b2ab3f7562d0e6e85abb9b9c4ee52f5c096bd50012c0776664ddc63cd2602c9e4dc3d6cd47ae5189e9c71b51afb2d44b2746d8ca80cb52fc8013904
   languageName: node
   linkType: hard
 

@@ -32,6 +32,7 @@ async function resolveDependency(
 	} catch (e: any) {
 		throw new Error(
 			`Failed to download package info from npm registry: ${e.message}`,
+			{ cause: e },
 		);
 	}
 

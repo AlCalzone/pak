@@ -1,10 +1,8 @@
-import execa from "execa";
 import * as fs from "fs-extra";
 import ky from "ky";
 import * as path from "path";
 import {
 	CommandResult,
-	execaReturnValueToCommandResult,
 	InstallOptions,
 	PackageManager,
 	PackOptions,
@@ -168,34 +166,13 @@ function walkLockfileV2V3(
 
 export class Npm extends PackageManager {
 	/** Executes a "raw" npm command */
-	private async command(
-		args: string[],
-		options: execa.Options<string> = {},
-	): Promise<CommandResult> {
+	private command(args: string[]): Promise<CommandResult> {
 		const isWindows = process.platform === "win32";
-		const promise = execa("npm", args, {
-			...options,
-			cwd: this.cwd,
-			reject: false,
-			all: true,
+		return this.exec("npm", args, {
 			// Windows needs shell to be true to execute npm
 			// https://github.com/nodejs/node/releases/tag/v18.20.2
 			shell: isWindows,
 		});
-
-		// Pipe command outputs if desired
-		if (this.stdout) promise.stdout?.pipe(this.stdout, { end: false });
-		if (this.stderr) promise.stderr?.pipe(this.stderr, { end: false });
-		if (this.stdall) promise.all?.pipe(this.stdall, { end: false });
-		// Execute the command
-		const result = await promise;
-		// Unpipe the command outputs again, so the process can end
-		promise.stdout?.unpipe();
-		promise.stderr?.unpipe();
-		promise.all?.unpipe();
-
-		// Translate the returned result
-		return execaReturnValueToCommandResult(result);
 	}
 
 	/** Installs the given packages using npm */

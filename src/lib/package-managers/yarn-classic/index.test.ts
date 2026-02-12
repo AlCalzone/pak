@@ -1,4 +1,4 @@
-import execa from "execa";
+import spawn from "nano-spawn";
 import fsExtra from "fs-extra";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { YarnClassic } from "./index.js";
@@ -6,40 +6,52 @@ import { YarnClassic } from "./index.js";
 vi.mock("fs-extra");
 const pathExistsMock = fsExtra.pathExists as Mock;
 
-vi.mock("execa");
-const execaMock = execa as any as Mock;
+vi.mock("nano-spawn");
+const spawnMock = spawn as any as Mock;
 
-const return_ok: execa.ExecaReturnValue<string> = {
-	command: "foobar",
-	exitCode: 0,
-	stderr: "",
+interface MockResult {
+	stdout: string;
+	stderr: string;
+	output: string;
+}
+
+interface MockError extends MockResult {
+	exitCode: number;
+}
+
+function mockSubprocess(result: MockResult) {
+	spawnMock.mockImplementation(() =>
+		Object.assign(Promise.resolve(result), { nodeChildProcess: {} }),
+	);
+}
+
+function mockSubprocessError(error: MockError) {
+	spawnMock.mockImplementation(() => {
+		const p = Promise.reject(
+			Object.assign(new Error("Command failed"), error),
+		) as any;
+		p.nodeChildProcess = {};
+		return p;
+	});
+}
+
+const return_ok: MockResult = {
 	stdout: "ok",
-	isCanceled: false,
-	failed: false,
-	timedOut: false,
-	killed: false,
-};
-
-const return_version: execa.ExecaReturnValue<string> = {
-	command: "yarn -v",
-	exitCode: 0,
 	stderr: "",
-	stdout: "1.2.3",
-	isCanceled: false,
-	failed: false,
-	timedOut: false,
-	killed: false,
+	output: "ok",
 };
 
-const return_nok: execa.ExecaReturnValue<string> = {
-	command: "foobar",
+const return_version: MockResult = {
+	stdout: "1.2.3",
+	stderr: "",
+	output: "1.2.3",
+};
+
+const return_nok: MockError = {
 	exitCode: 1,
-	stderr: "error",
 	stdout: "not ok",
-	isCanceled: false,
-	failed: true,
-	timedOut: false,
-	killed: false,
+	stderr: "error",
+	output: "not ok\nerror",
 };
 
 describe("yarn.install()", () => {
@@ -47,21 +59,21 @@ describe("yarn.install()", () => {
 
 	beforeEach(() => {
 		yarn = new YarnClassic();
-		execaMock.mockReset();
+		spawnMock.mockReset();
 	});
 
 	it("executes the correct command", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.install(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual(["add", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual(["add", "whatever"]);
 	});
 
 	it("handles multiple packages", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.install(["all", "these", "packages"]);
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual([
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual([
 			"add",
 			"all",
 			"these",
@@ -70,86 +82,86 @@ describe("yarn.install()", () => {
 	});
 
 	it("result.success is true when the command succeeds", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		const result = await yarn.install(["whatever"]);
 		expect(result.success).toBe(true);
 	});
 
 	it("result.success is false when the command fails", async () => {
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		const result = await yarn.install(["whatever"]);
 		expect(result.success).toBe(false);
 	});
 
 	it("result.exitCode contains the command exit code", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		let result = await yarn.install(["whatever"]);
-		expect(result.exitCode).toBe(return_ok.exitCode);
+		expect(result.exitCode).toBe(0);
 
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		result = await yarn.install(["whatever"]);
 		expect(result.exitCode).toBe(return_nok.exitCode);
 	});
 
 	it("defaults commands to the current cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.install(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({
 			cwd: process.cwd(),
 		});
 	});
 
 	it("respects the package manager's cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		yarn.cwd = "/foo/bar";
 		await yarn.install(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({ cwd: yarn.cwd });
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({ cwd: yarn.cwd });
 	});
 
 	it("respects the package manager's loglevel where supported", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		yarn.loglevel = "verbose";
 		await yarn.install(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--verbose"]),
 		);
 
 		yarn.loglevel = "silent";
 		await yarn.install(["whatever"]);
-		expect(execaMock.mock.calls[1][0]).toBe("yarn");
-		expect(execaMock.mock.calls[1][1]).toEqual(
+		expect(spawnMock.mock.calls[1][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[1][1]).toEqual(
 			expect.arrayContaining(["--silent"]),
 		);
 	});
 
 	it("respects the dependency type", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.install(["whatever"], {
 			dependencyType: "dev",
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--dev"]),
 		);
 	});
 
 	it("respects the save option", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.install(["whatever"], {
 			exact: true,
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--exact"]),
 		);
 	});
 
 	it("respects the global option", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.install(["whatever"], {
 			global: true,
 		});
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual([
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual([
 			"global",
 			"add",
 			"whatever",
@@ -157,12 +169,12 @@ describe("yarn.install()", () => {
 	});
 
 	it("passes the additional args on", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.install(["whatever"], {
 			additionalArgs: ["--foo", "--bar"],
 		});
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--foo", "--bar"]),
 		);
 	});
@@ -173,21 +185,21 @@ describe("yarn.uninstall()", () => {
 
 	beforeEach(() => {
 		yarn = new YarnClassic();
-		execaMock.mockReset();
+		spawnMock.mockReset();
 	});
 
 	it("executes the correct command", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.uninstall(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual(["remove", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual(["remove", "whatever"]);
 	});
 
 	it("handles multiple packages", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.uninstall(["all", "these", "packages"]);
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual([
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual([
 			"remove",
 			"all",
 			"these",
@@ -196,76 +208,76 @@ describe("yarn.uninstall()", () => {
 	});
 
 	it("result.success is true when the command succeeds", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		const result = await yarn.uninstall(["whatever"]);
 		expect(result.success).toBe(true);
 	});
 
 	it("result.success is false when the command fails", async () => {
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		const result = await yarn.uninstall(["whatever"]);
 		expect(result.success).toBe(false);
 	});
 
 	it("result.exitCode contains the command exit code", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		let result = await yarn.uninstall(["whatever"]);
-		expect(result.exitCode).toBe(return_ok.exitCode);
+		expect(result.exitCode).toBe(0);
 
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		result = await yarn.uninstall(["whatever"]);
 		expect(result.exitCode).toBe(return_nok.exitCode);
 	});
 
 	it("defaults commands to the current cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.uninstall(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({
 			cwd: process.cwd(),
 		});
 	});
 
 	it("respects the package manager's cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		yarn.cwd = "/foo/bar";
 		await yarn.uninstall(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({ cwd: yarn.cwd });
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({ cwd: yarn.cwd });
 	});
 
 	it("respects the package manager's loglevel where supported", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		yarn.loglevel = "verbose";
 		await yarn.uninstall(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--verbose"]),
 		);
 
 		yarn.loglevel = "silent";
 		await yarn.uninstall(["whatever"]);
-		expect(execaMock.mock.calls[1][0]).toBe("yarn");
-		expect(execaMock.mock.calls[1][1]).toEqual(
+		expect(spawnMock.mock.calls[1][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[1][1]).toEqual(
 			expect.arrayContaining(["--silent"]),
 		);
 	});
 
 	it("respects the dependency type", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.uninstall(["whatever"], {
 			dependencyType: "dev",
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--dev"]),
 		);
 	});
 
 	it("respects the global option", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.uninstall(["whatever"], {
 			global: true,
 		});
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual([
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual([
 			"global",
 			"remove",
 			"whatever",
@@ -273,12 +285,12 @@ describe("yarn.uninstall()", () => {
 	});
 
 	it("passes the additional args on", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.install(["whatever"], {
 			additionalArgs: ["--foo", "--bar"],
 		});
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--foo", "--bar"]),
 		);
 	});
@@ -289,21 +301,21 @@ describe("yarn.update()", () => {
 
 	beforeEach(() => {
 		yarn = new YarnClassic();
-		execaMock.mockReset();
+		spawnMock.mockReset();
 	});
 
 	it("executes the correct command", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.update(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual(["add", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual(["add", "whatever"]);
 	});
 
 	it("handles multiple packages", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.update(["all", "these", "packages"]);
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual([
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual([
 			"add",
 			"all",
 			"these",
@@ -312,76 +324,76 @@ describe("yarn.update()", () => {
 	});
 
 	it("result.success is true when the command succeeds", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		const result = await yarn.update(["whatever"]);
 		expect(result.success).toBe(true);
 	});
 
 	it("result.success is false when the command fails", async () => {
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		const result = await yarn.update(["whatever"]);
 		expect(result.success).toBe(false);
 	});
 
 	it("result.exitCode contains the command exit code", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		let result = await yarn.update(["whatever"]);
-		expect(result.exitCode).toBe(return_ok.exitCode);
+		expect(result.exitCode).toBe(0);
 
-		execaMock.mockResolvedValue(return_nok);
+		mockSubprocessError(return_nok);
 		result = await yarn.update(["whatever"]);
 		expect(result.exitCode).toBe(return_nok.exitCode);
 	});
 
 	it("defaults commands to the current cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.update(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({
 			cwd: process.cwd(),
 		});
 	});
 
 	it("respects the package manager's cwd", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		yarn.cwd = "/foo/bar";
 		await yarn.update(["whatever"]);
-		expect(execaMock.mock.calls[0][2]).toMatchObject({ cwd: yarn.cwd });
+		expect(spawnMock.mock.calls[0][2]).toMatchObject({ cwd: yarn.cwd });
 	});
 
 	it("respects the package manager's loglevel where supported", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		yarn.loglevel = "verbose";
 		await yarn.update(["whatever"]);
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--verbose"]),
 		);
 
 		yarn.loglevel = "silent";
 		await yarn.update(["whatever"]);
-		expect(execaMock.mock.calls[1][0]).toBe("yarn");
-		expect(execaMock.mock.calls[1][1]).toEqual(
+		expect(spawnMock.mock.calls[1][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[1][1]).toEqual(
 			expect.arrayContaining(["--silent"]),
 		);
 	});
 
 	it("respects the dependency type", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.update(["whatever"], {
 			dependencyType: "dev",
 		});
-		expect(execaMock.mock.calls[0][1]).toEqual(
+		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--dev"]),
 		);
 	});
 
 	it("respects the global option", async () => {
-		execaMock.mockResolvedValue(return_ok);
+		mockSubprocess(return_ok);
 		await yarn.update(["whatever"], {
 			global: true,
 		});
-		expect(execaMock.mock.calls[0][0]).toBe("yarn");
-		expect(execaMock.mock.calls[0][1]).toEqual([
+		expect(spawnMock.mock.calls[0][0]).toBe("yarn");
+		expect(spawnMock.mock.calls[0][1]).toEqual([
 			"global",
 			"add",
 			"whatever",
@@ -394,7 +406,7 @@ describe("yarn.rebuild()", () => {
 
 	beforeEach(() => {
 		yarn = new YarnClassic();
-		execaMock.mockReset();
+		spawnMock.mockReset();
 	});
 
 	it("is not supported", async () => {
@@ -413,7 +425,8 @@ describe("yarn.detect()", () => {
 				return Promise.resolve(true);
 			return Promise.resolve(false);
 		});
-		execaMock.mockReset().mockResolvedValue(return_version);
+		spawnMock.mockReset();
+		mockSubprocess(return_version);
 
 		const pm = new YarnClassic();
 		pm.cwd = "/path/to/sub/directory/cwd";
@@ -451,7 +464,8 @@ describe("yarn.detect()", () => {
 				return Promise.resolve(true);
 			return Promise.resolve(false);
 		});
-		execaMock.mockReset().mockResolvedValue(return_version);
+		spawnMock.mockReset();
+		mockSubprocess(return_version);
 
 		const pm = new YarnClassic();
 		pm.cwd = "/path/to/sub/directory/cwd";

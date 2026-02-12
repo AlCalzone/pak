@@ -17,6 +17,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "engines": {
+    "node": ">= 20"
+  },
   "repository": "https://github.com/AlCalzone/pak.git",
   "author": "Dominic Griesel <d.griesel@gmx.net>",
   "license": "MIT",

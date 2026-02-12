@@ -2,8 +2,7 @@ import { ensureDir, writeJson } from "fs-extra";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import os from "os";
 import path from "path";
-import rimraf from "rimraf";
-import { promisify } from "util";
+import { rimraf } from "rimraf";
 import { packageManagers } from "../../src/index.js";
 
 describe("End to end tests - generic pak features", () => {
@@ -12,12 +11,12 @@ describe("End to end tests - generic pak features", () => {
 	beforeEach(async () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-generic");
-		await promisify(rimraf)(testDir);
+		await rimraf(testDir);
 		await ensureDir(testDir);
 	});
 
 	afterEach(async () => {
-		await promisify(rimraf)(testDir);
+		await rimraf(testDir);
 	});
 
 	it("workspaces() -> returns an empty array if the package.json does not contain the workspaces field", async () => {

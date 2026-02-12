@@ -3,8 +3,7 @@ import { ensureDir, readJson, writeJson } from "fs-extra";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import os from "os";
 import path from "path";
-import rimraf from "rimraf";
-import { promisify } from "util";
+import { rimraf } from "rimraf";
 import { packageManagers } from "../../src/index.js";
 
 describe("End to end tests - yarn classic", () => {
@@ -13,7 +12,7 @@ describe("End to end tests - yarn classic", () => {
 	beforeEach(async () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-yarn-classic");
-		await promisify(rimraf)(testDir);
+		await rimraf(testDir);
 		await ensureDir(testDir);
 		// Remove temporary yarn paths from the env variable, otherwise the local yarn will be executed
 		process.env.PATH = process.env
@@ -123,6 +122,6 @@ describe("End to end tests - yarn classic", () => {
 	}, 60000);
 
 	afterEach(async () => {
-		await promisify(rimraf)(testDir);
+		await rimraf(testDir);
 	});
 });

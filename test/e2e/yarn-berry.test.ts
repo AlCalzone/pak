@@ -11,8 +11,7 @@ import {
 } from "fs-extra";
 import os from "os";
 import path from "path";
-import rimraf from "rimraf";
-import { promisify } from "util";
+import { rimraf } from "rimraf";
 import { packageManagers } from "../../src/index.js";
 
 describe("End to end tests - yarn berry", () => {
@@ -21,7 +20,7 @@ describe("End to end tests - yarn berry", () => {
 	beforeEach(async () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-yarn-berry");
-		await promisify(rimraf)(testDir);
+		await rimraf(testDir);
 		await ensureDir(testDir);
 		// Upgrade it to yarn v3
 		const templatesDir = path.join(__dirname, ".yarn-berry");
@@ -37,7 +36,7 @@ describe("End to end tests - yarn berry", () => {
 	});
 
 	afterEach(async () => {
-		await promisify(rimraf)(testDir);
+		await rimraf(testDir);
 	});
 
 	it("is actually using yarn berry", async () => {

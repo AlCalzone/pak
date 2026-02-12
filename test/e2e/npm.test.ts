@@ -3,9 +3,8 @@ import { ensureDir, readJson, writeJson } from "fs-extra";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import os from "os";
 import path from "path";
-import rimraf from "rimraf";
+import { rimraf } from "rimraf";
 import fs from "fs-extra";
-import { promisify } from "util";
 import { packageManagers } from "../../src/index.js";
 import semver from "semver";
 
@@ -15,12 +14,12 @@ describe("End to end tests - npm", () => {
 	beforeEach(async () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-npm");
-		await promisify(rimraf)(testDir);
+		await rimraf(testDir);
 		await ensureDir(testDir);
 	});
 
 	afterEach(async () => {
-		await promisify(rimraf)(testDir);
+		await rimraf(testDir);
 	});
 
 	it("installs und uninstalls correctly", async () => {

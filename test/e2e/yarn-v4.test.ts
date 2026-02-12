@@ -11,8 +11,7 @@ import {
 } from "fs-extra";
 import os from "os";
 import path from "path";
-import rimraf from "rimraf";
-import { promisify } from "util";
+import { rimraf } from "rimraf";
 import { packageManagers } from "../../src/index.js";
 import semver from "semver";
 
@@ -25,7 +24,7 @@ if (nodeVersion && nodeVersion >= 18) {
 		beforeEach(async () => {
 			// Create test directory
 			testDir = path.join(os.tmpdir(), "pak-test-yarn-v4");
-			await promisify(rimraf)(testDir);
+			await rimraf(testDir);
 			await ensureDir(testDir);
 			// Upgrade it to yarn v4
 			const templatesDir = path.join(__dirname, ".yarn-v4");
@@ -41,7 +40,7 @@ if (nodeVersion && nodeVersion >= 18) {
 		});
 
 		afterEach(async () => {
-			await promisify(rimraf)(testDir);
+			await rimraf(testDir);
 		});
 
 		it("is actually using yarn berry", async () => {

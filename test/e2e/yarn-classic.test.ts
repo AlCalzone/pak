@@ -1,5 +1,5 @@
 import spawn from "nano-spawn";
-import { ensureDir, readJson, writeJson } from "fs-extra";
+import * as fs from "node:fs/promises";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import os from "os";
 import path from "path";
@@ -13,7 +13,7 @@ describe("End to end tests - yarn classic", () => {
 		// Create test directory
 		testDir = path.join(os.tmpdir(), "pak-test-yarn-classic");
 		await rimraf(testDir);
-		await ensureDir(testDir);
+		await fs.mkdir(testDir, { recursive: true });
 		// Remove temporary yarn paths from the env variable, otherwise the local yarn will be executed
 		process.env.PATH = process.env
 			.PATH!.split(path.delimiter)
@@ -36,7 +36,7 @@ describe("End to end tests - yarn classic", () => {
 			version: "0.0.1",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const yarn = new packageManagers.yarnClassic();
 		yarn.cwd = testDir;
@@ -48,17 +48,17 @@ describe("End to end tests - yarn classic", () => {
 		// Now that something is installed, there should be a yarn.lock
 		await expect(yarn.findRoot("yarn.lock")).resolves.toBe(testDir);
 
-		packageJson = await readJson(packageJsonPath);
+		packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
 		expect(packageJson.dependencies["is-even"]).toBe("0.1.0");
 		expect(packageJson.devDependencies["is-odd"]).toBe("^3.0.0");
 
 		await yarn.update(["is-odd"]); // there's at least a 3.0.1 to update to
-		packageJson = await readJson(packageJsonPath);
+		packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
 		expect(packageJson.devDependencies["is-odd"]).not.toBe("^3.0.0");
 
 		await yarn.uninstall(["is-even"]);
 		await yarn.uninstall(["is-odd"], { dependencyType: "dev" });
-		packageJson = await readJson(packageJsonPath);
+		packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
 
 		expect(packageJson.dependencies ?? {}).not.toHaveProperty("is-even");
 		expect(packageJson.devDependencies ?? {}).not.toHaveProperty("is-odd");
@@ -70,7 +70,7 @@ describe("End to end tests - yarn classic", () => {
 			version: "0.0.1",
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const yarn = new packageManagers.yarnClassic();
 		yarn.cwd = testDir;
@@ -103,7 +103,7 @@ describe("End to end tests - yarn classic", () => {
 			},
 		};
 		const packageJsonPath = path.join(testDir, "package.json");
-		await writeJson(packageJsonPath, packageJson);
+		await fs.writeFile(packageJsonPath, JSON.stringify(packageJson));
 
 		const yarn = new packageManagers.yarnClassic();
 		yarn.cwd = testDir;

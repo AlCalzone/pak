@@ -39,7 +39,6 @@
     "@alcalzone/release-script": "^5.0.0",
     "@eslint/js": "^10.0.1",
     "@tsconfig/node20": "^20.1.9",
-    "@types/fs-extra": "^9.0.13",
     "@types/node": "^20.19.33",
     "@types/semver": "^7.7.1",
     "eslint": "^10.0.0",
@@ -54,7 +53,6 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "fs-extra": "^10.1.0",
     "ky": "^1.14.3",
     "nano-spawn": "^2.0.0",
     "semver": "^7.7.4",

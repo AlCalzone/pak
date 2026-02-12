@@ -1,4 +1,4 @@
-import * as fs from "fs-extra";
+import * as fs from "node:fs/promises";
 import ky from "ky";
 import * as path from "path";
 import {
@@ -304,9 +304,9 @@ export class Npm extends PackageManager {
 			// 	encoding: "utf8",
 			// });
 			rootPackageLockPath = path.join(root, "package-lock.json");
-			rootPackageLock = await fs.readJson(rootPackageLockPath, {
-				encoding: "utf8",
-			});
+			rootPackageLock = JSON.parse(
+				await fs.readFile(rootPackageLockPath, "utf8"),
+			);
 		} catch (e: any) {
 			return this.fail(
 				`Error loading root package.json and package-lock.json: ${e.message}`,
@@ -360,9 +360,7 @@ export class Npm extends PackageManager {
 		try {
 			for (const packPath of affectedPackageJsons) {
 				// Update each possibly affected package.json
-				const pack = await fs.readJson(packPath, {
-					encoding: "utf8",
-				});
+				const pack = JSON.parse(await fs.readFile(packPath, "utf8"));
 				if (!pack.dependencies) continue;
 				let wasChanged = false;
 				for (const [dep, { version }] of Object.entries(overrides)) {
@@ -373,18 +371,20 @@ export class Npm extends PackageManager {
 				}
 				// And save it
 				if (wasChanged) {
-					await fs.writeJson(packPath, pack, {
-						spaces: 2,
-						encoding: "utf8",
-					});
+					await fs.writeFile(
+						packPath,
+						JSON.stringify(pack, null, 2) + "\n",
+						"utf8",
+					);
 				}
 			}
 
 			// Save package-lock.json last
-			await fs.writeJson(rootPackageLockPath, rootPackageLock, {
-				spaces: 2,
-				encoding: "utf8",
-			});
+			await fs.writeFile(
+				rootPackageLockPath,
+				JSON.stringify(rootPackageLock, null, 2) + "\n",
+				"utf8",
+			);
 		} catch (e: any) {
 			return this.fail(`Error updating package files: ${e.message}`);
 		}
@@ -411,7 +411,7 @@ export class Npm extends PackageManager {
 		const npmVersion = await this.version();
 		if (gte(npmVersion, "7.0.0")) {
 			// Make sure the target dir exists
-			await fs.ensureDir(targetDir);
+			await fs.mkdir(targetDir, { recursive: true });
 
 			// npm7+ lets us specify where to place the tarball
 			const prevCwd = this.cwd;
@@ -437,11 +437,13 @@ export class Npm extends PackageManager {
 				);
 			}
 			// Make sure the target dir exists
-			await fs.ensureDir(targetDir);
+			await fs.mkdir(targetDir, { recursive: true });
 
 			// Determine the name of the tarball. npm6 has different rules than the newer versions
 			const packageJsonPath = path.join(workspaceDir, "package.json");
-			const packageJson = await fs.readJson(packageJsonPath, "utf8");
+			const packageJson = JSON.parse(
+				await fs.readFile(packageJsonPath, "utf8"),
+			);
 			const packageName = packageJson.name
 				.replace("/", "-")
 				.replace(/^@/, "");
@@ -460,7 +462,7 @@ export class Npm extends PackageManager {
 				const npmTarballPath = path.join(workspaceDir, result.stdout);
 				if (npmTarballPath !== targetPath) {
 					// Rename the tarball to the expected name
-					await fs.move(npmTarballPath, targetPath);
+					await fs.rename(npmTarballPath, targetPath);
 				}
 
 				return {

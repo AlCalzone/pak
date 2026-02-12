@@ -26,13 +26,11 @@ __metadata:
     "@alcalzone/release-script": ^5.0.0
     "@eslint/js": ^10.0.1
     "@tsconfig/node20": ^20.1.9
-    "@types/fs-extra": ^9.0.13
     "@types/node": ^20.19.33
     "@types/semver": ^7.7.1
     eslint: ^10.0.0
     eslint-config-prettier: ^10.1.8
     eslint-plugin-prettier: ^5.5.5
-    fs-extra: ^10.1.0
     ky: ^1.14.3
     nano-spawn: ^2.0.0
     prettier: ^3.8.1
@@ -892,26 +890,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/fs-extra@npm:^9.0.13":
-  version: 9.0.13
-  resolution: "@types/fs-extra@npm:9.0.13"
-  dependencies:
-    "@types/node": "*"
-  checksum: add79e212acd5ac76b97b9045834e03a7996aef60a814185e0459088fd290519a3c1620865d588fa36c4498bf614210d2a703af5cf80aa1dbc125db78f6edac3
-  languageName: node
-  linkType: hard
-
 "@types/json-schema@npm:^7.0.15":
   version: 7.0.15
   resolution: "@types/json-schema@npm:7.0.15"
   checksum: 97ed0cb44d4070aecea772b7b2e2ed971e10c81ec87dd4ecc160322ffa55ff330dace1793489540e3e318d90942064bb697cc0f8989391797792d919737b3b98
-  languageName: node
-  linkType: hard
-
-"@types/node@npm:*":
-  version: 17.0.21
-  resolution: "@types/node@npm:17.0.21"
-  checksum: 89dcd2fe82f21d3634266f8384e9c865cf8af49685639fbdbd799bdd1040480fb1e8eeda2d3b9fce41edbe704d2a4be9f427118c4ae872e8d9bb7cbeb3c41a94
   languageName: node
   linkType: hard
 

@@ -1,10 +1,10 @@
 import spawn from "nano-spawn";
-import fsExtra from "fs-extra";
+import * as nodeFs from "node:fs/promises";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { Npm } from "./index.js";
 
-vi.mock("fs-extra");
-const pathExistsMock = fsExtra.pathExists as Mock;
+vi.mock("node:fs/promises");
+const accessMock = nodeFs.access as unknown as Mock;
 
 vi.mock("nano-spawn");
 const spawnMock = spawn as any as Mock;
@@ -448,12 +448,12 @@ describe("npm.rebuild()", () => {
 
 describe("npm.detect()", () => {
 	it("returns true when there is a package-lock.json in the root directory", async () => {
-		pathExistsMock.mockImplementation((filename: string) => {
+		accessMock.mockImplementation((filename: string) => {
 			if (filename.replace(/\\/g, "/") === "/path/to/package.json")
-				return Promise.resolve(true);
+				return Promise.resolve();
 			if (filename.replace(/\\/g, "/") === "/path/to/package-lock.json")
-				return Promise.resolve(true);
-			return Promise.resolve(false);
+				return Promise.resolve();
+			return Promise.reject(new Error("ENOENT"));
 		});
 
 		const pm = new Npm();
@@ -463,10 +463,10 @@ describe("npm.detect()", () => {
 	});
 
 	it("returns false when there isn't", async () => {
-		pathExistsMock.mockImplementation((filename: string) => {
+		accessMock.mockImplementation((filename: string) => {
 			if (filename.replace(/\\/g, "/") === "/path/to/package.json")
-				return Promise.resolve(true);
-			return Promise.resolve(false);
+				return Promise.resolve();
+			return Promise.reject(new Error("ENOENT"));
 		});
 
 		const pm = new Npm();
@@ -476,7 +476,7 @@ describe("npm.detect()", () => {
 	});
 
 	it("returns false when the root dir cannot be found", async () => {
-		pathExistsMock.mockResolvedValue(false);
+		accessMock.mockRejectedValue(new Error("ENOENT"));
 
 		const pm = new Npm();
 		pm.cwd = "/path/to/sub/directory/cwd";
@@ -485,12 +485,12 @@ describe("npm.detect()", () => {
 	});
 
 	it("updates the cwd when the setCwdToPackageRoot option is set", async () => {
-		pathExistsMock.mockImplementation((filename: string) => {
+		accessMock.mockImplementation((filename: string) => {
 			if (filename.replace(/\\/g, "/") === "/path/to/package.json")
-				return Promise.resolve(true);
+				return Promise.resolve();
 			if (filename.replace(/\\/g, "/") === "/path/to/package-lock.json")
-				return Promise.resolve(true);
-			return Promise.resolve(false);
+				return Promise.resolve();
+			return Promise.reject(new Error("ENOENT"));
 		});
 
 		const pm = new Npm();

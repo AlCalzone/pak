@@ -1,18 +1,18 @@
-import fsExtra from "fs-extra";
+import * as nodeFs from "node:fs/promises";
 import { describe, expect, it, type Mock, vi } from "vitest";
 import { Npm } from "./npm/index.js";
 
-vi.mock("fs-extra");
-const pathExistsMock = fsExtra.pathExists as Mock;
+vi.mock("node:fs/promises");
+const accessMock = nodeFs.access as unknown as Mock;
 
 describe("PackageManager.findRoot()", () => {
 	it("finds the nearest directory with a package.json and the corresponding lockfile", async () => {
-		pathExistsMock.mockImplementation((filename: string) => {
+		accessMock.mockImplementation((filename: string) => {
 			if (filename.replace(/\\/g, "/") === "/path/to/package.json")
-				return Promise.resolve(true);
+				return Promise.resolve();
 			if (filename.replace(/\\/g, "/") === "/path/to/lockfile.json")
-				return Promise.resolve(true);
-			return Promise.resolve(false);
+				return Promise.resolve();
+			return Promise.reject(new Error("ENOENT"));
 		});
 
 		const pm = new Npm();
@@ -22,7 +22,7 @@ describe("PackageManager.findRoot()", () => {
 	});
 
 	it("and throws when there is none", async () => {
-		pathExistsMock.mockResolvedValue(false);
+		accessMock.mockRejectedValue(new Error("ENOENT"));
 
 		const pm = new Npm();
 		pm.cwd = "/path/to/sub/directory/cwd";

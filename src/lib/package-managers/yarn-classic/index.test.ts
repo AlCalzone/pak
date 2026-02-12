@@ -1,10 +1,10 @@
 import spawn from "nano-spawn";
-import fsExtra from "fs-extra";
+import * as nodeFs from "node:fs/promises";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { YarnClassic } from "./index.js";
 
-vi.mock("fs-extra");
-const pathExistsMock = fsExtra.pathExists as Mock;
+vi.mock("node:fs/promises");
+const accessMock = nodeFs.access as unknown as Mock;
 
 vi.mock("nano-spawn");
 const spawnMock = spawn as any as Mock;
@@ -418,12 +418,12 @@ describe("yarn.rebuild()", () => {
 
 describe("yarn.detect()", () => {
 	it("returns true when there is a yarn.lock in the root directory and yarn is version 1", async () => {
-		pathExistsMock.mockImplementation((filename: string) => {
+		accessMock.mockImplementation((filename: string) => {
 			if (filename.replace(/\\/g, "/") === "/path/to/package.json")
-				return Promise.resolve(true);
+				return Promise.resolve();
 			if (filename.replace(/\\/g, "/") === "/path/to/yarn.lock")
-				return Promise.resolve(true);
-			return Promise.resolve(false);
+				return Promise.resolve();
+			return Promise.reject(new Error("ENOENT"));
 		});
 		spawnMock.mockReset();
 		mockSubprocess(return_version);
@@ -435,10 +435,10 @@ describe("yarn.detect()", () => {
 	});
 
 	it("returns false when there isn't", async () => {
-		pathExistsMock.mockImplementation((filename: string) => {
+		accessMock.mockImplementation((filename: string) => {
 			if (filename.replace(/\\/g, "/") === "/path/to/package.json")
-				return Promise.resolve(true);
-			return Promise.resolve(false);
+				return Promise.resolve();
+			return Promise.reject(new Error("ENOENT"));
 		});
 
 		const pm = new YarnClassic();
@@ -448,7 +448,7 @@ describe("yarn.detect()", () => {
 	});
 
 	it("returns false when the root dir cannot be found", async () => {
-		pathExistsMock.mockResolvedValue(false);
+		accessMock.mockRejectedValue(new Error("ENOENT"));
 
 		const pm = new YarnClassic();
 		pm.cwd = "/path/to/sub/directory/cwd";
@@ -457,12 +457,12 @@ describe("yarn.detect()", () => {
 	});
 
 	it("updates the cwd when the setCwdToPackageRoot option is set", async () => {
-		pathExistsMock.mockImplementation((filename: string) => {
+		accessMock.mockImplementation((filename: string) => {
 			if (filename.replace(/\\/g, "/") === "/path/to/package.json")
-				return Promise.resolve(true);
+				return Promise.resolve();
 			if (filename.replace(/\\/g, "/") === "/path/to/yarn.lock")
-				return Promise.resolve(true);
-			return Promise.resolve(false);
+				return Promise.resolve();
+			return Promise.reject(new Error("ENOENT"));
 		});
 		spawnMock.mockReset();
 		mockSubprocess(return_version);

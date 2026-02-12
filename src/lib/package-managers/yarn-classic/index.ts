@@ -9,7 +9,7 @@ import {
 	PackOptions,
 	UninstallOptions,
 	UpdateOptions,
-} from "../package-manager";
+} from "../package-manager.js";
 
 function setLoglevel(args: string[], loglevel: PackageManager["loglevel"]) {
 	if (loglevel === "silent" || loglevel === "verbose") {

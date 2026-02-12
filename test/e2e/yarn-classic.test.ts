@@ -1,10 +1,11 @@
 import execa from "execa";
 import { ensureDir, readJson, writeJson } from "fs-extra";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import os from "os";
 import path from "path";
 import rimraf from "rimraf";
 import { promisify } from "util";
-import { packageManagers } from "../../src/index";
+import { packageManagers } from "../../src/index.js";
 
 describe("End to end tests - yarn classic", () => {
 	let testDir: string;

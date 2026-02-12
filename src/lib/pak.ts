@@ -1,7 +1,7 @@
-import { Npm } from "./package-managers/npm";
-import type { PackageManager } from "./package-managers/package-manager";
-import { YarnBerry } from "./package-managers/yarn-berry";
-import { YarnClassic } from "./package-managers/yarn-classic";
+import { Npm } from "./package-managers/npm/index.js";
+import type { PackageManager } from "./package-managers/package-manager.js";
+import { YarnBerry } from "./package-managers/yarn-berry/index.js";
+import { YarnClassic } from "./package-managers/yarn-classic/index.js";
 
 export const packageManagers = Object.freeze({
 	yarn: YarnBerry,

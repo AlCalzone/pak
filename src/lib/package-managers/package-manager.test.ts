@@ -1,8 +1,9 @@
 import fsExtra from "fs-extra";
-import { Npm } from "./npm";
+import { describe, expect, it, type Mock, vi } from "vitest";
+import { Npm } from "./npm/index.js";
 
-jest.mock("fs-extra");
-const pathExistsMock = fsExtra.pathExists as jest.Mock;
+vi.mock("fs-extra");
+const pathExistsMock = fsExtra.pathExists as Mock;
 
 describe("PackageManager.findRoot()", () => {
 	it("finds the nearest directory with a package.json and the corresponding lockfile", async () => {
@@ -25,6 +26,6 @@ describe("PackageManager.findRoot()", () => {
 
 		const pm = new Npm();
 		pm.cwd = "/path/to/sub/directory/cwd";
-		expect(() => pm.findRoot("lockfile")).rejects;
+		await expect(pm.findRoot("lockfile")).rejects.toThrow();
 	});
 });

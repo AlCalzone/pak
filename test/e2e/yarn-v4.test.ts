@@ -1,4 +1,5 @@
 import execa from "execa";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
 	copy,
 	createFile,
@@ -12,7 +13,7 @@ import os from "os";
 import path from "path";
 import rimraf from "rimraf";
 import { promisify } from "util";
-import { packageManagers } from "../../src/index";
+import { packageManagers } from "../../src/index.js";
 import semver from "semver";
 
 // Yarn v4 requires Node 18+
@@ -200,7 +201,7 @@ if (nodeVersion && nodeVersion >= 18) {
 			expect(result.stdout).toBe(
 				path.join(testDir, "foo/bar/test-0.0.1.tgz"),
 			);
-			expect(pathExists(result.stdout)).resolves.toBe(true);
+			await expect(pathExists(result.stdout)).resolves.toBe(true);
 		}, 60000);
 
 		it("packs scoped non-monorepo projects correctly", async () => {
@@ -218,7 +219,7 @@ if (nodeVersion && nodeVersion >= 18) {
 			expect(result.stdout).toBe(
 				path.join(testDir, "scope-test-0.0.1-beta.0+1234.tgz"),
 			);
-			expect(pathExists(result.stdout)).resolves.toBe(true);
+			await expect(pathExists(result.stdout)).resolves.toBe(true);
 		}, 60000);
 
 		it("packs monorepo workspaces correctly", async () => {
@@ -252,7 +253,7 @@ if (nodeVersion && nodeVersion >= 18) {
 			expect(result.stdout).toBe(
 				path.join(testDir, "test-package-a-0.0.1.tgz"),
 			);
-			expect(pathExists(result.stdout)).resolves.toBe(true);
+			await expect(pathExists(result.stdout)).resolves.toBe(true);
 
 			result = await yarn.pack({
 				workspace: "packages/package-b",
@@ -260,7 +261,7 @@ if (nodeVersion && nodeVersion >= 18) {
 			expect(result.stdout).toBe(
 				path.join(testDir, "test-package-b-0.0.2.tgz"),
 			);
-			expect(pathExists(result.stdout)).resolves.toBe(true);
+			await expect(pathExists(result.stdout)).resolves.toBe(true);
 		}, 60000);
 	});
 } else {

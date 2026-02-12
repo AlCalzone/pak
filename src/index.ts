@@ -4,5 +4,5 @@ export type {
 	PackageManager,
 	UninstallOptions,
 	UpdateOptions,
-} from "./lib/package-managers/package-manager";
-export { detectPackageManager, packageManagers } from "./lib/pak";
+} from "./lib/package-managers/package-manager.js";
+export { detectPackageManager, packageManagers } from "./lib/pak.js";

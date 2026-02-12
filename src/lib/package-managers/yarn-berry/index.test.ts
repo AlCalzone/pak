@@ -1,12 +1,13 @@
 import execa from "execa";
 import fsExtra from "fs-extra";
-import { YarnBerry } from ".";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { YarnBerry } from "./index.js";
 
-jest.mock("fs-extra");
-const pathExistsMock = fsExtra.pathExists as jest.Mock;
+vi.mock("fs-extra");
+const pathExistsMock = fsExtra.pathExists as Mock;
 
-jest.mock("execa");
-const execaMock = execa as any as jest.Mock;
+vi.mock("execa");
+const execaMock = execa as any as Mock;
 
 const return_ok: execa.ExecaReturnValue<string> = {
 	command: "foobar",

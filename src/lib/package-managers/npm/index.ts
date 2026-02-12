@@ -1,6 +1,6 @@
-import axios from "axios";
 import execa from "execa";
 import * as fs from "fs-extra";
+import ky from "ky";
 import * as path from "path";
 import {
 	CommandResult,
@@ -10,7 +10,7 @@ import {
 	PackOptions,
 	UninstallOptions,
 	UpdateOptions,
-} from "../package-manager";
+} from "../package-manager.js";
 import { gte } from "semver";
 
 const exactVersionRegex = /.+@\d+/;
@@ -28,8 +28,7 @@ async function resolveDependency(
 ): Promise<ResolvedDependency> {
 	let reg: Record<string, any>;
 	try {
-		reg = (await axios.get(`https://registry.npmjs.org/${dependency}`))
-			.data;
+		reg = await ky.get(`https://registry.npmjs.org/${dependency}`).json();
 	} catch (e: any) {
 		throw new Error(
 			`Failed to download package info from npm registry: ${e.message}`,
@@ -331,7 +330,7 @@ export class Npm extends PackageManager {
 				encoding: "utf8",
 			});
 		} catch (e: any) {
-			return fail(
+			return this.fail(
 				`Error loading root package.json and package-lock.json: ${e.message}`,
 			);
 		}
@@ -341,7 +340,7 @@ export class Npm extends PackageManager {
 			rootPackageLock.lockfileVersion !== 2 &&
 			rootPackageLock.lockfileVersion !== 3
 		) {
-			return fail(
+			return this.fail(
 				`Lockfile version ${rootPackageLock.lockfileVersion} is not supported!`,
 			);
 		}
@@ -352,7 +351,7 @@ export class Npm extends PackageManager {
 			try {
 				overrides[dep] = await resolveDependency(dep, version);
 			} catch (e: any) {
-				return fail(e.message);
+				return this.fail(e.message);
 			}
 		}
 
@@ -409,14 +408,13 @@ export class Npm extends PackageManager {
 				encoding: "utf8",
 			});
 		} catch (e: any) {
-			return fail(`Error updating package files: ${e.message}`);
+			return this.fail(`Error updating package files: ${e.message}`);
 		}
 
 		// Running "npm install" in the root dir will now install the correct dependencies
 		const prevCwd = this.cwd;
 		this.cwd = root;
 		try {
-			debugger;
 			const ret = await this.install();
 			// Force npm to restore the original structure
 			await this.command(["dedupe"]);

@@ -9,7 +9,7 @@ import {
 	PackOptions,
 	UninstallOptions,
 	UpdateOptions,
-} from "../package-manager";
+} from "../package-manager.js";
 
 function setLoglevel(_args: string[], _loglevel: PackageManager["loglevel"]) {
 	// yarn berry doesn't allow setting the log level

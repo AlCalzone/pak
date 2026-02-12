@@ -1,11 +1,12 @@
 import execa from "execa";
 import { ensureDir, readJson, writeJson } from "fs-extra";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import os from "os";
 import path from "path";
 import rimraf from "rimraf";
 import fs from "fs-extra";
 import { promisify } from "util";
-import { packageManagers } from "../../src/index";
+import { packageManagers } from "../../src/index.js";
 import semver from "semver";
 
 describe("End to end tests - npm", () => {
@@ -162,7 +163,7 @@ describe("End to end tests - npm", () => {
 		expect(result.stdout).toBe(
 			path.join(testDir, "foo/bar/test-0.0.1.tgz"),
 		);
-		expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+		await expect(fs.pathExists(result.stdout)).resolves.toBe(true);
 	}, 60000);
 
 	it("packs scoped non-monorepo projects correctly", async () => {
@@ -181,7 +182,7 @@ describe("End to end tests - npm", () => {
 		expect(result.stdout).toBe(
 			path.join(testDir, "scope-test-0.0.1-beta.0+1234.tgz"),
 		);
-		expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+		await expect(fs.pathExists(result.stdout)).resolves.toBe(true);
 	}, 60000);
 
 	it("packs monorepo workspaces correctly", async () => {
@@ -216,7 +217,7 @@ describe("End to end tests - npm", () => {
 			expect(result.stdout).toBe(
 				path.join(testDir, "test-package-a-0.0.1.tgz"),
 			);
-			expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+			await expect(fs.pathExists(result.stdout)).resolves.toBe(true);
 
 			result = await npm.pack({
 				workspace: "packages/package-b",
@@ -224,7 +225,7 @@ describe("End to end tests - npm", () => {
 			expect(result.stdout).toBe(
 				path.join(testDir, "test-package-b-0.0.2.tgz"),
 			);
-			expect(fs.pathExists(result.stdout)).resolves.toBe(true);
+			await expect(fs.pathExists(result.stdout)).resolves.toBe(true);
 		} else {
 			// npm 6 will fail
 			expect(result.success).toBe(false);

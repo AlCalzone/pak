@@ -58,5 +58,5 @@
     "semver": "^7.7.4",
     "tiny-glob": "^0.2.9"
   },
-  "packageManager": "yarn@3.2.3"
+  "packageManager": "yarn@4.12.0"
 }

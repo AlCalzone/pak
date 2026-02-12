@@ -135,7 +135,7 @@ jobs:
     - name: Publish package to npm
       env:
         TAG: ${{ steps.extract_release.outputs.TAG }}
-      run: npm publish $TAG
+      run: yarn npm publish $TAG
 
     - name: Create Github Release
       uses: softprops/action-gh-release@v2

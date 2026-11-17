@@ -168,11 +168,22 @@ export class Npm extends PackageManager {
 	/** Executes a "raw" npm command */
 	private command(args: string[]): Promise<CommandResult> {
 		const isWindows = process.platform === "win32";
-		return this.exec("npm", args, {
-			// Windows needs shell to be true to execute npm
-			// https://github.com/nodejs/node/releases/tag/v18.20.2
-			shell: isWindows,
-		});
+		if (isWindows) {
+			// npm is exposed as a .cmd shim on Windows, which cannot be spawned
+			// directly. Using a shell to invoke it with an args array triggers
+			// DEP0190 on Node.js 24 and does not escape the arguments. Execute the
+			// underlying CLI with Node.js instead.
+			const npmCli = path.join(
+				path.dirname(process.execPath),
+				"node_modules",
+				"npm",
+				"bin",
+				"npm-cli.js",
+			);
+			return this.exec(process.execPath, [npmCli, ...args]);
+		}
+
+		return this.exec("npm", args);
 	}
 
 	/** Installs the given packages using npm */

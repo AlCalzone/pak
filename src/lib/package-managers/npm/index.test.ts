@@ -1,5 +1,6 @@
 import spawn from "nano-spawn";
 import * as nodeFs from "node:fs/promises";
+import path from "node:path";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { Npm } from "./index.js";
 
@@ -8,6 +9,21 @@ const accessMock = nodeFs.access as unknown as Mock;
 
 vi.mock("nano-spawn");
 const spawnMock = spawn as any as Mock;
+
+const npmCommand = process.platform === "win32" ? process.execPath : "npm";
+const npmArgs = (...args: string[]): string[] =>
+	process.platform === "win32"
+		? [
+				path.join(
+					path.dirname(process.execPath),
+					"node_modules",
+					"npm",
+					"bin",
+					"npm-cli.js",
+				),
+				...args,
+			]
+		: args;
 
 interface MockResult {
 	stdout: string;
@@ -59,20 +75,19 @@ describe("npm.install()", () => {
 	it("executes the correct command", async () => {
 		mockSubprocess(return_ok);
 		await npm.install(["whatever"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
-		expect(spawnMock.mock.calls[0][1]).toEqual(["install", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
+		expect(spawnMock.mock.calls[0][1]).toEqual(
+			npmArgs("install", "whatever"),
+		);
 	});
 
 	it("handles multiple packages", async () => {
 		mockSubprocess(return_ok);
 		await npm.install(["all", "these", "packages"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
-		expect(spawnMock.mock.calls[0][1]).toEqual([
-			"install",
-			"all",
-			"these",
-			"packages",
-		]);
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
+		expect(spawnMock.mock.calls[0][1]).toEqual(
+			npmArgs("install", "all", "these", "packages"),
+		);
 	});
 
 	it("result.success is true when the command succeeds", async () => {
@@ -116,7 +131,7 @@ describe("npm.install()", () => {
 		mockSubprocess(return_ok);
 		npm.loglevel = "error";
 		await npm.install(["whatever"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
 		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--loglevel", "error"]),
 		);
@@ -182,20 +197,19 @@ describe("npm.uninstall()", () => {
 	it("executes the correct command", async () => {
 		mockSubprocess(return_ok);
 		await npm.uninstall(["whatever"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
-		expect(spawnMock.mock.calls[0][1]).toEqual(["uninstall", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
+		expect(spawnMock.mock.calls[0][1]).toEqual(
+			npmArgs("uninstall", "whatever"),
+		);
 	});
 
 	it("handles multiple packages", async () => {
 		mockSubprocess(return_ok);
 		await npm.uninstall(["all", "these", "packages"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
-		expect(spawnMock.mock.calls[0][1]).toEqual([
-			"uninstall",
-			"all",
-			"these",
-			"packages",
-		]);
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
+		expect(spawnMock.mock.calls[0][1]).toEqual(
+			npmArgs("uninstall", "all", "these", "packages"),
+		);
 	});
 
 	it("result.success is true when the command succeeds", async () => {
@@ -239,7 +253,7 @@ describe("npm.uninstall()", () => {
 		mockSubprocess(return_ok);
 		npm.loglevel = "error";
 		await npm.uninstall(["whatever"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
 		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--loglevel", "error"]),
 		);
@@ -287,20 +301,19 @@ describe("npm.update()", () => {
 	it("executes the correct command", async () => {
 		mockSubprocess(return_ok);
 		await npm.update(["whatever"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
-		expect(spawnMock.mock.calls[0][1]).toEqual(["update", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
+		expect(spawnMock.mock.calls[0][1]).toEqual(
+			npmArgs("update", "whatever"),
+		);
 	});
 
 	it("handles multiple packages", async () => {
 		mockSubprocess(return_ok);
 		await npm.update(["all", "these", "packages"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
-		expect(spawnMock.mock.calls[0][1]).toEqual([
-			"update",
-			"all",
-			"these",
-			"packages",
-		]);
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
+		expect(spawnMock.mock.calls[0][1]).toEqual(
+			npmArgs("update", "all", "these", "packages"),
+		);
 	});
 
 	it("result.success is true when the command succeeds", async () => {
@@ -344,7 +357,7 @@ describe("npm.update()", () => {
 		mockSubprocess(return_ok);
 		npm.loglevel = "error";
 		await npm.update(["whatever"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
 		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--loglevel", "error"]),
 		);
@@ -382,20 +395,19 @@ describe("npm.rebuild()", () => {
 	it("executes the correct command", async () => {
 		mockSubprocess(return_ok);
 		await npm.rebuild(["whatever"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
-		expect(spawnMock.mock.calls[0][1]).toEqual(["rebuild", "whatever"]);
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
+		expect(spawnMock.mock.calls[0][1]).toEqual(
+			npmArgs("rebuild", "whatever"),
+		);
 	});
 
 	it("handles multiple packages", async () => {
 		mockSubprocess(return_ok);
 		await npm.rebuild(["all", "these", "packages"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
-		expect(spawnMock.mock.calls[0][1]).toEqual([
-			"rebuild",
-			"all",
-			"these",
-			"packages",
-		]);
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
+		expect(spawnMock.mock.calls[0][1]).toEqual(
+			npmArgs("rebuild", "all", "these", "packages"),
+		);
 	});
 
 	it("result.success is true when the command succeeds", async () => {
@@ -439,7 +451,7 @@ describe("npm.rebuild()", () => {
 		mockSubprocess(return_ok);
 		npm.loglevel = "error";
 		await npm.rebuild(["whatever"]);
-		expect(spawnMock.mock.calls[0][0]).toBe("npm");
+		expect(spawnMock.mock.calls[0][0]).toBe(npmCommand);
 		expect(spawnMock.mock.calls[0][1]).toEqual(
 			expect.arrayContaining(["--loglevel", "error"]),
 		);
